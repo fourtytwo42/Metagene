@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = ["crates/metagene-core", "src-tauri"]
+
+[workspace.package]
+version = "0.3.2"
+edition = "2024"
+license = "MIT"
+authors = ["Metagene contributors"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[patch.crates-io]
+# Compatibility-only manifest pin; source is unmodified gpu-allocator 0.28.0.
+# WGPU 29 and the allocator must share windows-rs 0.62 on Windows while Tauri
+# legitimately retains its separate 0.61 dependency.
+gpu-allocator = { path = "third-party/gpu-allocator-0.28.0" }

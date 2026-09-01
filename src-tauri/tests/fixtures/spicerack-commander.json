@@ -1,0 +1,12 @@
+[
+  {
+    "TID": "commander-fixture",
+    "tournamentName": "Fixture Commander Event",
+    "format": "COMMANDER2",
+    "bracketUrl": "https://example.test/events/commander",
+    "startDate": 1799990000,
+    "standings": [
+      { "name": "Commander pilot", "decklist_text": "Commander\n1 Fixture Commander\n\nDeck\n99 Plains" }
+    ]
+  }
+]

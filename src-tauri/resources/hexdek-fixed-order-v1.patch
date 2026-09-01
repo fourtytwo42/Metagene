@@ -1,0 +1,163 @@
+warning: in the working copy of 'cmd/hexdek-tournament/main.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'internal/tournament/config.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'internal/tournament/runner.go', LF will be replaced by CRLF the next time Git touches it
+diff --git a/cmd/hexdek-tournament/main.go b/cmd/hexdek-tournament/main.go
+index dcf8e10..da47f8d 100644
+--- a/cmd/hexdek-tournament/main.go
++++ b/cmd/hexdek-tournament/main.go
+@@ -67,6 +67,7 @@ func main() {
+ 		seed        = flag.Int64("seed", 42, "master RNG seed")
+ 		seats       = flag.Int("seats", 4, "seats per game")
+ 		workers     = flag.Int("workers", 0, "goroutine pool size (0 = NumCPU)")
++		fixedOrder  = flag.Bool("fixed-order", false, "keep deck assignment fixed and start seat 0 (for explicit play/draw evaluation)")
+ 		hatKind     = flag.String("hat", "yggdrasil", "hat policy: yggdrasil (default) | greedy | poker | octo (stress-test)")
+ 		hatBudget     = flag.Int("hat-budget", 50, "yggdrasil budget: 0=heuristic, 1-199=evaluator-guided, 200+=rollout")
+ 		hatTurnBudget = flag.Int("turn-budget", 0, "per-turn eval budget (0=legacy per-action, 100=recommended). Hat allocates evals across decisions within a turn.")
+@@ -419,6 +420,7 @@ func main() {
+ 		HatFactories:    hatFactories,
+ 		Workers:         *workers,
+ 		CommanderMode:   *commander,
++		FixedOrder:      *fixedOrder,
+ 		AuditEnabled:    *audit,
+ 		ReportPath:      *reportPath,
+ 		MaxTurnsPerGame: *maxTurns,
+diff --git a/internal/tournament/config.go b/internal/tournament/config.go
+index 072d6cc..cd77edd 100644
+--- a/internal/tournament/config.go
++++ b/internal/tournament/config.go
+@@ -68,6 +68,11 @@ type TournamentConfig struct {
+ 	// format parity.
+ 	CommanderMode bool
+ 
++	// FixedOrder disables per-game deck rotation and always starts seat 0.
++	// It is intended for explicit constructed play/draw branches; normal
++	// tournaments retain randomized starts and rotation.
++	FixedOrder bool
++
+ 	// AuditEnabled captures the full event stream per game for
+ 	// post-run rule auditing. WARNING: ~10x the memory footprint of
+ 	// a 50k-game run; only enable for smaller diagnostic runs.
+diff --git a/internal/tournament/runner.go b/internal/tournament/runner.go
+index 6ac000c..1865a18 100644
+--- a/internal/tournament/runner.go
++++ b/internal/tournament/runner.go
+@@ -153,7 +153,7 @@ func Run(cfg TournamentConfig) (*TournamentResult, error) {
+ 		go func(workerID int) {
+ 			defer wg.Done()
+ 			for gameIdx := range seeds {
+-				outcome := runOneGameSafe(gameIdx, decks, hats, cfg.NSeats, cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, contractParamsFromConfig(cfg))
++				outcome := runOneGameSafeWithOrder(gameIdx, decks, hats, cfg.NSeats, cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, cfg.FixedOrder, contractParamsFromConfig(cfg))
+ 				outcomes <- outcome
+ 				done := atomic.AddInt64(&completed, 1)
+ 				if progressEvery > 0 && done%int64(progressEvery) == 0 {
+@@ -300,12 +300,12 @@ type gameProgress struct {
+ 	boardMax   int64
+ }
+ 
+-func runOneGameSafe(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
+-	nSeats int, masterSeed int64, maxTurns int, gameTimeout time.Duration, commanderMode, auditEnabled, analyticsEnabled bool, contracts contractParams) (outcome GameOutcome) {
++func runOneGameSafeWithOrder(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
++	nSeats int, masterSeed int64, maxTurns int, gameTimeout time.Duration, commanderMode, auditEnabled, analyticsEnabled, fixedOrder bool, contracts contractParams) (outcome GameOutcome) {
+ 	outcome.GameIdx = gameIdx
+ 	outcome.Winner = -1
+ 	outcome.WinnerCommanderIdx = -1
+-	outcome.Rot = gameIdx % nSeats
++	outcome.Rot = gameRotation(gameIdx, nSeats, fixedOrder)
+ 
+ 	var prog gameProgress
+ 	ch := make(chan GameOutcome, 1)
+@@ -318,13 +318,13 @@ func runOneGameSafe(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatF
+ 					GameIdx:            gameIdx,
+ 					Winner:             -1,
+ 					WinnerCommanderIdx: -1,
+-					Rot:                gameIdx % nSeats,
++					Rot:                gameRotation(gameIdx, nSeats, fixedOrder),
+ 					CrashErr:           fmt.Sprintf("panic: %v\n%s", r, buf[:n]),
+ 					EndReason:          "crash",
+ 				}
+ 			}
+ 		}()
+-		ch <- runOneGame(gameIdx, decks, hats, nSeats, masterSeed, maxTurns, commanderMode, auditEnabled, analyticsEnabled, &prog, contracts)
++		ch <- runOneGameWithOrder(gameIdx, decks, hats, nSeats, masterSeed, maxTurns, commanderMode, auditEnabled, analyticsEnabled, fixedOrder, &prog, contracts)
+ 	}()
+ 
+ 	select {
+@@ -340,14 +340,19 @@ func runOneGameSafe(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatF
+ 	}
+ }
+ 
++func runOneGameSafe(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
++	nSeats int, masterSeed int64, maxTurns int, gameTimeout time.Duration, commanderMode, auditEnabled, analyticsEnabled bool, contracts contractParams) GameOutcome {
++	return runOneGameSafeWithOrder(gameIdx, decks, hats, nSeats, masterSeed, maxTurns, gameTimeout, commanderMode, auditEnabled, analyticsEnabled, false, contracts)
++}
++
+ // runOneGame simulates a single game. Returns the populated GameOutcome.
+ //
+ // Semantic reference: scripts/gauntlet_poker.py _run_one_game_with_policy.
+-func runOneGame(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
+-	nSeats int, masterSeed int64, maxTurns int, commanderMode, auditEnabled, analyticsEnabled bool, prog *gameProgress, contracts contractParams) GameOutcome {
++func runOneGameWithOrder(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
++	nSeats int, masterSeed int64, maxTurns int, commanderMode, auditEnabled, analyticsEnabled, fixedOrder bool, prog *gameProgress, contracts contractParams) GameOutcome {
+ 	out := GameOutcome{
+ 		GameIdx:            gameIdx,
+-		Rot:                gameIdx % nSeats,
++		Rot:                gameRotation(gameIdx, nSeats, fixedOrder),
+ 		Winner:             -1,
+ 		WinnerCommanderIdx: -1,
+ 		EliminationOrder:   make([]int, nSeats),
+@@ -444,8 +449,12 @@ func runOneGame(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFacto
+ 		RunLondonMulligan(gs, i)
+ 	}
+ 
+-	// Random starting active seat (mirrors gauntlet_poker).
+-	gs.Active = rng.Intn(nSeats)
++	if fixedOrder {
++		gs.Active = 0
++	} else {
++		// Random starting active seat (mirrors gauntlet_poker).
++		gs.Active = rng.Intn(nSeats)
++	}
+ 	gs.Turn = 1
+ 	gs.LogEvent(gameengine.Event{
+ 		Kind: "game_start", Seat: gs.Active, Target: -1,
+@@ -757,6 +766,18 @@ func runOneGame(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFacto
+ 	return out
+ }
+ 
++func runOneGame(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFactory,
++	nSeats int, masterSeed int64, maxTurns int, commanderMode, auditEnabled, analyticsEnabled bool, prog *gameProgress, contracts contractParams) GameOutcome {
++	return runOneGameWithOrder(gameIdx, decks, hats, nSeats, masterSeed, maxTurns, commanderMode, auditEnabled, analyticsEnabled, false, prog, contracts)
++}
++
++func gameRotation(gameIdx, nSeats int, fixedOrder bool) int {
++	if fixedOrder {
++		return 0
++	}
++	return gameIdx % nSeats
++}
++
+ // runPool executes a tournament where each game samples NSeats random
+ // decks from the full pool. Tracks per-commander stats across all games.
+ func runPool(cfg TournamentConfig, workers, maxTurns int, gameTimeout time.Duration) (*TournamentResult, error) {
+@@ -818,8 +839,8 @@ func runPool(cfg TournamentConfig, workers, maxTurns int, gameTimeout time.Durat
+ 					podDecks[i] = allDecks[idx]
+ 					podHats[i] = uniformHat
+ 				}
+-				o := runOneGameSafe(job.gameIdx, podDecks, podHats, nSeats,
+-					cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, contractParamsFromConfig(cfg))
++				o := runOneGameSafeWithOrder(job.gameIdx, podDecks, podHats, nSeats,
++					cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, cfg.FixedOrder, contractParamsFromConfig(cfg))
+ 				outcomes <- poolOutcome{o, job.deckIdxs}
+ 				done := atomic.AddInt64(&completed, 1)
+ 				if progressEvery > 0 && done%int64(progressEvery) == 0 {
+@@ -1110,8 +1131,8 @@ func runLazyPool(cfg TournamentConfig, workers, maxTurns int, gameTimeout time.D
+ 				}
+ 				var o GameOutcome
+ 				if parseOK {
+-					o = runOneGameSafe(job.gameIdx, podDecks, podHats, nSeats,
+-						cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, contractParamsFromConfig(cfg))
++					o = runOneGameSafeWithOrder(job.gameIdx, podDecks, podHats, nSeats,
++						cfg.Seed, maxTurns, gameTimeout, cfg.CommanderMode, cfg.AuditEnabled, cfg.AnalyticsEnabled, cfg.FixedOrder, contractParamsFromConfig(cfg))
+ 				} else {
+ 					o = GameOutcome{
+ 						GameIdx:   job.gameIdx,

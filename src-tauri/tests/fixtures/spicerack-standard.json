@@ -1,0 +1,16 @@
+[
+  {
+    "TID": "event-good",
+    "tournamentName": "Fixture Standard Open",
+    "format": "STANDARD",
+    "bracketUrl": "https://example.test/events/event-good",
+    "players": 4,
+    "startDate": 1799990000,
+    "standings": [
+      { "name": "Player One", "decklist_text": "Deck\n56 Plains\n4 Healer's Hawk\n\nSideboard\n4 Ajani's Pridemate" },
+      { "name": "Player Two", "decklist_text": "Deck\n4 Healer's Hawk\n56 Plains\n\nSideboard\n4 Ajani's Pridemate" },
+      { "name": "No List", "decklist_text": null },
+      { "name": "Unknown Card", "decklist_text": "Deck\n60 Definitely Not A Card" }
+    ]
+  }
+]

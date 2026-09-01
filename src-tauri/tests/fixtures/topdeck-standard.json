@@ -1,0 +1,14 @@
+[
+  {
+    "TID": "topdeck-fixture",
+    "tournamentName": "TopDeck Fixture Open",
+    "format": "Standard",
+    "eventUrl": "https://topdeck.gg/event/topdeck-fixture",
+    "startDate": 1799990000,
+    "standings": [
+      { "name": "One", "decklist": "Deck\n56 Plains\n4 Healer's Hawk\n\nSideboard\n4 Ajani's Pridemate" },
+      { "name": "Two", "decklist": "Deck\n4 Healer's Hawk\n56 Plains\n\nSideboard\n4 Ajani's Pridemate" },
+      { "name": "External only", "decklist": "https://moxfield.com/decks/example" }
+    ]
+  }
+]

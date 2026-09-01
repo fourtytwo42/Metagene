@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "policy_id": "commander-pairing-2026-08",
+  "cases": [
+    { "id": "partner-valid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Partner" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Partner (You can have two commanders if both have partner.)" }, "expected_rule": "partner" },
+    { "id": "partner-one-sided-invalid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Partner" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Flying" }, "expected_rule": null },
+    { "id": "partner-with-valid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Partner with Beta" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Flying" }, "expected_rule": "partner-with" },
+    { "id": "partner-with-wrong-name-invalid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Partner with Gamma" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Flying" }, "expected_rule": null },
+    { "id": "friends-forever-valid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Friends forever" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Friends forever" }, "expected_rule": "friends-forever" },
+    { "id": "friends-one-sided-invalid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Friends forever" }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Partner" }, "expected_rule": null },
+    { "id": "background-valid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Choose a Background" }, "right": { "name": "Lore", "type_line": "Legendary Enchantment — Background", "oracle_text": "" }, "expected_rule": "choose-a-background" },
+    { "id": "background-wrong-type-invalid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Choose a Background" }, "right": { "name": "Lore", "type_line": "Legendary Enchantment", "oracle_text": "" }, "expected_rule": null },
+    { "id": "doctor-companion-valid", "left": { "name": "Companion", "type_line": "Legendary Creature", "oracle_text": "Doctor's companion" }, "right": { "name": "Doctor", "type_line": "Legendary Creature — Time Lord Doctor", "oracle_text": "" }, "expected_rule": "doctors-companion" },
+    { "id": "doctor-companion-wrong-type-invalid", "left": { "name": "Companion", "type_line": "Legendary Creature", "oracle_text": "Doctor's companion" }, "right": { "name": "Traveler", "type_line": "Legendary Creature — Time Lord", "oracle_text": "" }, "expected_rule": null },
+    { "id": "ordinary-legends-invalid", "left": { "name": "Alpha", "type_line": "Legendary Creature", "oracle_text": "Partners gain flying." }, "right": { "name": "Beta", "type_line": "Legendary Creature", "oracle_text": "Partner" }, "expected_rule": null }
+  ]
+}

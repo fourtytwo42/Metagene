@@ -1,0 +1,24 @@
+{
+  "data": {
+    "slug": "fixture-standard",
+    "name": "Fixture Standard Deck",
+    "game": "Magic: The Gathering",
+    "format": "Standard",
+    "archetype": "  mono   white  ",
+    "updated_at": "2027-01-15T05:00:00+00:00",
+    "urls": {
+      "web": "https://getpaird.io/decklists/fixture-standard",
+      "api": "https://getpaird.io/api/v1/decks/fixture-standard"
+    },
+    "cards": {
+      "mainboard": [
+        { "name": "Plains", "quantity": 56 },
+        { "name": "Healer's Hawk", "quantity": 4 }
+      ],
+      "sideboard": [
+        { "name": "Ajani's Pridemate", "quantity": 4 }
+      ],
+      "command_zone": []
+    }
+  }
+}

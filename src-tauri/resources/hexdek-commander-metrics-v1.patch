@@ -1,0 +1,230 @@
+diff --git a/cmd/hexdek-tournament/main.go b/cmd/hexdek-tournament/main.go
+--- a/cmd/hexdek-tournament/main.go
++++ b/cmd/hexdek-tournament/main.go
+@@ -75,3 +75,4 @@ func main() {
+ 		matchup     = flag.Bool("matchup", false, "show full matchup matrix in output")
+ 		audit       = flag.Bool("audit", false, "capture full event stream")
++		compactMetrics = flag.Bool("compact-metrics", false, "emit compact multiplayer behavior metrics without retaining per-game analytics in result JSON")
+ 		reportPath  = flag.String("report", "data/rules/go_tournament_report.md", "markdown report output path")
+@@ -388,4 +389,4 @@ func main() {
+ 			CommanderMode:    *commander,
+ 			AuditEnabled:     *audit,
+-			AnalyticsEnabled: false,
++			AnalyticsEnabled: *compactMetrics,
+ 			ReportPath:       *reportPath,
+@@ -424,2 +425,3 @@ func main() {
+ 		AuditEnabled:    *audit,
++		AnalyticsEnabled: *compactMetrics,
+ 		ReportPath:      *reportPath,
+@@ -499,4 +501,9 @@ func main() {
+ 		}
+ 	}
++	if *compactMetrics {
++		result.Analyses = nil
++		result.CardRankings = nil
++		result.MatchupDetails = nil
++	}
+ 
+ 	// --result-json emits the canonical structured TournamentResult so
+diff --git a/internal/tournament/results.go b/internal/tournament/results.go
+--- a/internal/tournament/results.go
++++ b/internal/tournament/results.go
+@@ -106,3 +106,27 @@ type SeatStats struct {
+ }
++
++// CommanderMetricSummary is a compact, deck-indexed aggregate used by
++// high-volume external evaluators. It preserves multiplayer behavior signals
++// without retaining every per-game analysis in TournamentResult JSON.
++type CommanderMetricSummary struct {
++	Games             int            `json:"games"`
++	Wins              int            `json:"wins"`
++	LandsPlayed       int            `json:"lands_played"`
++	ManaSpent         int            `json:"mana_spent"`
++	ManaWasted        int            `json:"mana_wasted"`
++	DamageDealt       int            `json:"damage_dealt"`
++	DamageTaken       int            `json:"damage_taken"`
++	CreaturesLost     int            `json:"creatures_lost"`
++	CreaturesKilled   int            `json:"creatures_killed"`
++	SpellsCast        int            `json:"spells_cast"`
++	CountersCast      int            `json:"counters_cast"`
++	RemovalCast       int            `json:"removal_cast"`
++	PeakBoardSize     int            `json:"peak_board_size"`
++	PeakLife          int            `json:"peak_life"`
++	FinalLife         int            `json:"final_life"`
++	Survived          int            `json:"survived"`
++	TargetActions     map[string]int `json:"target_actions"`
++	KingmakingSignals int            `json:"kingmaking_signals"`
++}
+ 
+ // SchemaVersion identifies the canonical TournamentResult JSON
+@@ -256,4 +280,9 @@ type TournamentResult struct {
+ 	// when AnalyticsEnabled.
+ 	MatchupDetails []analytics.MatchupDetail `json:"matchup_details,omitempty"`
++
++	// CommanderMetrics aggregates the subset of analytics needed for
++	// multiplayer deck evaluation. Compact-metrics mode retains this map while
++	// dropping the much larger per-game Analyses payload before JSON output.
++	CommanderMetrics map[string]*CommanderMetricSummary `json:"commander_metrics,omitempty"`
+ 
+ 	// KillRecords aggregates all kill events across games. Only
+diff --git a/internal/tournament/runner.go b/internal/tournament/runner.go
+--- a/internal/tournament/runner.go
++++ b/internal/tournament/runner.go
+@@ -392,6 +392,6 @@ func runOneGame(gameIdx int, decks []*deckparser.TournamentDeck, hats []HatFacto
+ 	// deterministic noise-RNG seeding — treat Seed==0 as "unseeded" and
+ 	// fall back to nondeterministic behavior.
+ 	gs.Seed = gameSeed
+-	if !auditEnabled {
++	if !auditEnabled && !analyticsEnabled {
+ 		gs.EventPolicy = gameengine.EventLogNone
+ 	}
+diff --git a/internal/tournament/aggregate.go b/internal/tournament/aggregate.go
+--- a/internal/tournament/aggregate.go
++++ b/internal/tournament/aggregate.go
+@@ -28,4 +28,5 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 		AvgTurnToWin:                 make(map[string]float64, nSeats),
+ 		MatchupMatrix:                make(map[string]map[string]int, nSeats),
+ 		MatchupGames:                 make(map[string]map[string]int, nSeats),
++		CommanderMetrics:             make(map[string]*CommanderMetricSummary, nSeats),
+ 	}
+@@ -35,3 +36,4 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 		r.MatchupMatrix[name] = make(map[string]int, nSeats)
+ 		r.MatchupGames[name] = make(map[string]int, nSeats)
++		r.CommanderMetrics[name] = &CommanderMetricSummary{TargetActions: make(map[string]int)}
+ 	}
+@@ -192,3 +194,4 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 		if outcome.Analysis != nil {
+ 			r.Analyses = append(r.Analyses, outcome.Analysis)
++			aggregateCommanderMetrics(r.CommanderMetrics, outcome.Analysis)
+ 		}
+@@ -231,3 +234,82 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 	}
+ 	return r
+ }
++
++func aggregateCommanderMetrics(metrics map[string]*CommanderMetricSummary, analysis *analytics.GameAnalysis) {
++	if analysis == nil {
++		return
++	}
++	for _, player := range analysis.Players {
++		summary := metrics[player.CommanderName]
++		if summary == nil {
++			summary = &CommanderMetricSummary{TargetActions: make(map[string]int)}
++			metrics[player.CommanderName] = summary
++		}
++		summary.Games++
++		if player.Won {
++			summary.Wins++
++		}
++		summary.LandsPlayed += player.LandsPlayed
++		summary.ManaSpent += player.ManaSpent
++		summary.ManaWasted += player.ManaWasted
++		summary.DamageDealt += player.DamageDealt
++		summary.DamageTaken += player.DamageTaken
++		summary.CreaturesLost += player.CreaturesLost
++		summary.CreaturesKilled += player.CreaturesKilled
++		summary.SpellsCast += player.SpellsCast
++		summary.CountersCast += player.CountersCast
++		summary.RemovalCast += player.RemovalCast
++		summary.PeakBoardSize += player.PeakBoardSize
++		summary.PeakLife += player.PeakLife
++		summary.FinalLife += player.FinalLife
++		if player.TurnOfDeath == 0 {
++			summary.Survived++
++		}
++	}
++	if analysis.Interactions == nil {
++		return
++	}
++	for source, row := range analysis.Interactions.Cells {
++		if source >= len(analysis.Interactions.SeatCommanders) {
++			continue
++		}
++		sourceName := analysis.Interactions.SeatCommanders[source]
++		summary := metrics[sourceName]
++		if summary == nil {
++			continue
++		}
++		total := 0
++		maximum := 0
++		maximumTarget := -1
++		winnerActions := 0
++		for target, cell := range row {
++			if target == source || target >= len(analysis.Interactions.SeatCommanders) {
++				continue
++			}
++			actions := cell.Attacks + cell.Counters
++			if cell.PlayerDamage > 0 {
++				actions++
++			}
++			if actions == 0 {
++				continue
++			}
++			targetName := analysis.Interactions.SeatCommanders[target]
++			summary.TargetActions[targetName] += actions
++			total += actions
++			if actions > maximum {
++				maximum = actions
++				maximumTarget = target
++			}
++			if target == analysis.WinnerSeat {
++				winnerActions = actions
++			}
++		}
++		// Conservative proxy: a losing player devoted at least 75% of three
++		// or more directed actions to another non-winner while applying less
++		// than half as much pressure to the eventual winner.
++		if source != analysis.WinnerSeat && total >= 3 && maximum*4 >= total*3 &&
++			maximumTarget != analysis.WinnerSeat && winnerActions*2 < maximum {
++			summary.KingmakingSignals++
++		}
++	}
++}
+diff --git a/internal/tournament/metagene_compact_metrics_test.go b/internal/tournament/metagene_compact_metrics_test.go
+new file mode 100644
+--- /dev/null
++++ b/internal/tournament/metagene_compact_metrics_test.go
+@@ -0,0 +1,43 @@
++package tournament
++
++import (
++	"testing"
++
++	"github.com/hexdek/hexdek/internal/analytics"
++)
++
++func TestAggregateCommanderMetricsTracksBehaviorAndKingmakingSignal(t *testing.T) {
++	metrics := map[string]*CommanderMetricSummary{
++		"Alpha": {TargetActions: map[string]int{}},
++		"Beta":  {TargetActions: map[string]int{}},
++		"Gamma": {TargetActions: map[string]int{}},
++	}
++	analysis := &analytics.GameAnalysis{
++		WinnerSeat: 2,
++		Players: []analytics.PlayerAnalysis{
++			{Seat: 0, CommanderName: "Alpha", ManaSpent: 8, ManaWasted: 2, DamageDealt: 6, DamageTaken: 12, RemovalCast: 2, PeakBoardSize: 5, FinalLife: 8},
++			{Seat: 1, CommanderName: "Beta"},
++			{Seat: 2, CommanderName: "Gamma", Won: true, TurnOfDeath: 0},
++		},
++		Interactions: &analytics.InteractionMatrix{
++			Seats:          3,
++			SeatCommanders: []string{"Alpha", "Beta", "Gamma"},
++			Cells: [][]analytics.InteractionCell{
++				{{}, {Attacks: 3, PlayerDamage: 6}, {}},
++				{{}, {}, {}},
++				{{}, {}, {}},
++			},
++		},
++	}
++	aggregateCommanderMetrics(metrics, analysis)
++	alpha := metrics["Alpha"]
++	if alpha.Games != 1 || alpha.ManaSpent != 8 || alpha.RemovalCast != 2 || alpha.PeakBoardSize != 5 {
++		t.Fatalf("unexpected Alpha aggregate: %+v", alpha)
++	}
++	if alpha.TargetActions["Beta"] != 4 {
++		t.Fatalf("target actions = %d, want 4", alpha.TargetActions["Beta"])
++	}
++	if alpha.KingmakingSignals != 1 {
++		t.Fatalf("kingmaking signals = %d, want 1", alpha.KingmakingSignals)
++	}
++}

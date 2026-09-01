@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "platform": "arena",
+  "format": "historic",
+  "purpose": "Metagene 0.1.10 functional-action and strategy-preserving Tune regression fixtures",
+  "root": [
+    "3 Mythos of Illuna (IKO) 58", "3 Whirler Rogue (ORI) 83", "4 Quasiduplicate (GRN) 51", "4 Temple of Mystery (M20) 255", "5 Forest (THB) 254", "5 Island (THB) 251", "3 Nightclub Bouncer (Y22) 6", "4 Prosperous Innkeeper (AFR) 200", "3 Glasspool Mimic (ZNR) 60", "3 Acidic Slime (M12) 161", "4 Howling Mine (BRR) 20", "4 Cackling Counterpart (SIS) 14", "4 Bala Ged Recovery (ZNR) 180", "3 Parallel Lives (J21) 103", "2 Gala Greeters (SNC) 148", "3 Railway Brawler (OTJ) 175", "3 Thassa, Deep-Dwelling (THB) 71"
+  ],
+  "candidates": [
+    { "id": 1, "expected": ["rejected_by_tune_identity", "dead_colored_skullbomb_modes", "weak_closing"], "deck": [
+      "16 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "4 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "4 Fountainport Bell (BLB) 245", "4 Surgical Skullbomb (ONE) 243", "4 Reckoner Bankbuster (NEO) 255", "4 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 2, "expected": ["rejected_by_tune_identity"], "deck": [
+      "19 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "1 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "2 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "4 Fountainport Bell (BLB) 245", "4 Surgical Skullbomb (ONE) 243", "4 Reckoner Bankbuster (NEO) 255", "1 Hercules, Prince of Power (MSH) 171", "1 Renata, Called to the Hunt (MUL) 28", "4 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 3, "expected": ["rejected_by_tune_identity"], "deck": [
+      "1 Saw (DSK) 254", "18 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "1 Lotus Ring (BIG) 24", "4 Ghost Vacuum (DSK) 248", "2 A-Ochre Jelly (AFR) A-196", "2 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "4 Fountainport Bell (BLB) 245", "1 Slithering Cryptid (TMT) 168", "4 Surgical Skullbomb (ONE) 243", "4 Reckoner Bankbuster (NEO) 255", "3 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 4, "expected": ["rejected_by_tune_identity"], "deck": [
+      "13 Forest (BLB) 280", "1 Loch Mare (ECL) 57", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "1 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "1 Shipwreck Marsh (MID) 285", "1 Mystic Monastery (KTK) 236", "1 Willowrush Verge (DFT) 270", "4 Fountainport Bell (BLB) 245", "3 Seat of the Synod (J25) 773", "4 Surgical Skullbomb (ONE) 243", "3 Reckoner Bankbuster (NEO) 255", "4 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 5, "expected": ["rejected_by_tune_identity"], "deck": [
+      "12 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "4 Ominous Asylum (SPM) 181", "1 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "4 Fountainport Bell (BLB) 245", "3 Spire of Industry (KLR) 285", "3 Surgical Skullbomb (ONE) 243", "4 Reckoner Bankbuster (NEO) 255", "1 Vampires' Vengeance (VOW) 180", "4 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 6, "expected": ["rejected_by_tune_identity"], "deck": [
+      "16 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "2 A-Ochre Jelly (AFR) A-196", "4 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "2 Chromatic Sphere (JMP) 462", "2 Hope of Ghirapur (KLR) 243", "2 Collector's Vault (WOE) 244", "4 Fountainport Bell (BLB) 245", "4 Surgical Skullbomb (ONE) 243", "2 Reckoner Bankbuster (NEO) 255", "2 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 7, "expected": ["rejected_by_tune_identity"], "deck": [
+      "18 Forest (BLB) 280", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "1 Wolf's Quarry (ELD) 184", "2 Promising Vein (LCI) 279", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "4 Seedship Impact (EOE) 205", "1 Collector's Vault (WOE) 244", "4 Fountainport Bell (BLB) 245", "4 Surgical Skullbomb (ONE) 243", "2 Reckoner Bankbuster (NEO) 255", "1 Path of Annihilation (MH3) 165", "3 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]},
+    { "id": 8, "expected": ["rejected_by_tune_identity"], "deck": [
+      "13 Forest (BLB) 280", "2 Quench (RNA) 48", "4 Edge Rover (EOE) 179", "4 Ghost Vacuum (DSK) 248", "4 A-Ochre Jelly (AFR) A-196", "1 Tangled Islet (DMU) 258", "4 Summon: Fenrir (FIN) 203", "4 Dross Skullbomb (ONE) 225", "3 Seedship Impact (EOE) 205", "4 Cephalid Coliseum (MH3) 300", "4 Fountainport Bell (BLB) 245", "1 Hinterland Harbor (LTC) 317", "4 Surgical Skullbomb (ONE) 243", "1 Wandering Fumarole (PIO) 278", "3 Reckoner Bankbuster (NEO) 255", "4 Teachings of the Kirin // Kirin-Touched Orochi (NEO) 212"
+    ]}
+  ]
+}

@@ -1,0 +1,15 @@
+/target/
+/node_modules/
+/dist/
+/.data/
+/.cache/
+/downloads/
+/artifacts/
+/test-results/
+/*.sqlite
+/*.sqlite-shm
+/*.sqlite-wal
+/*.jsonl
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,784 @@
+diff --git a/cmd/hexdek-tournament/main.go b/cmd/hexdek-tournament/main.go
+index 659de26d97dc3eb4e287f0000ce8cae008175f46..a8b5a9a680b7dcc3e942f6263a27d60e43ee716d 100644
+--- a/cmd/hexdek-tournament/main.go
++++ b/cmd/hexdek-tournament/main.go
+@@ -61,36 +61,37 @@ func checkFreyaData(deckPath string) bool {
+ 
+ func main() {
+ 	var (
+-		decksArg    = flag.String("decks", "", "comma-separated deck paths OR a directory of .txt files")
+-		moxfieldArg = flag.String("moxfield", "", "comma-separated Moxfield URLs to fetch and use as decks")
+-		games       = flag.Int("games", 100, "number of games to simulate")
+-		seed        = flag.Int64("seed", 42, "master RNG seed")
+-		seats       = flag.Int("seats", 4, "seats per game")
+-		workers     = flag.Int("workers", 0, "goroutine pool size (0 = NumCPU)")
+-		fixedOrder  = flag.Bool("fixed-order", false, "keep deck assignment fixed and start seat 0 (for explicit play/draw evaluation)")
+-		hatKind     = flag.String("hat", "yggdrasil", "hat policy: yggdrasil (default) | greedy | poker | octo (stress-test)")
+-		hatBudget     = flag.Int("hat-budget", 50, "yggdrasil budget: 0=heuristic, 1-199=evaluator-guided, 200+=rollout")
+-		hatTurnBudget = flag.Int("turn-budget", 0, "per-turn eval budget (0=legacy per-action, 100=recommended). Hat allocates evals across decisions within a turn.")
+-		hatNoise      = flag.Float64("hat-noise", 0.2, "gaussian σ on targeting scores (0=deterministic, 0.2=default human-scale fuzz)")
+-		legacyWeights = flag.Bool("legacy-hat-weights", false, "force midrange eval weights for every archetype (pre-b0b6db4 baseline for A/B winrate comparisons)")
+-		applyFeedback = flag.String("apply-feedback", "", "path to a Heimdall feedback JSON (or directory containing heimdall_feedback.json); loaded via hat.SetActiveFeedback before games begin. Closes the Heimdall → hat learning loop. See docs/heimdall-hat-self-tune-r60.md.")
+-		feedbackOut   = flag.String("feedback-out", "", "directory to write heimdall_feedback.json after the gauntlet completes; computed from result.Analyses via analytics.ComputeWeightDeltas. Feeds the NEXT gauntlet's --apply-feedback.")
++		decksArg       = flag.String("decks", "", "comma-separated deck paths OR a directory of .txt files")
++		moxfieldArg    = flag.String("moxfield", "", "comma-separated Moxfield URLs to fetch and use as decks")
++		games          = flag.Int("games", 100, "number of games to simulate")
++		seed           = flag.Int64("seed", 42, "master RNG seed")
++		seats          = flag.Int("seats", 4, "seats per game")
++		workers        = flag.Int("workers", 0, "goroutine pool size (0 = NumCPU)")
++		fixedOrder     = flag.Bool("fixed-order", false, "keep deck assignment fixed and start seat 0 (for explicit play/draw evaluation)")
++		comboPlan      = flag.String("combo-plan", "", "Metagene per-deck proven combo-plan JSON (optional strategy overlay)")
++		hatKind        = flag.String("hat", "yggdrasil", "hat policy: yggdrasil (default) | greedy | poker | octo (stress-test)")
++		hatBudget      = flag.Int("hat-budget", 50, "yggdrasil budget: 0=heuristic, 1-199=evaluator-guided, 200+=rollout")
++		hatTurnBudget  = flag.Int("turn-budget", 0, "per-turn eval budget (0=legacy per-action, 100=recommended). Hat allocates evals across decisions within a turn.")
++		hatNoise       = flag.Float64("hat-noise", 0.2, "gaussian σ on targeting scores (0=deterministic, 0.2=default human-scale fuzz)")
++		legacyWeights  = flag.Bool("legacy-hat-weights", false, "force midrange eval weights for every archetype (pre-b0b6db4 baseline for A/B winrate comparisons)")
++		applyFeedback  = flag.String("apply-feedback", "", "path to a Heimdall feedback JSON (or directory containing heimdall_feedback.json); loaded via hat.SetActiveFeedback before games begin. Closes the Heimdall → hat learning loop. See docs/heimdall-hat-self-tune-r60.md.")
++		feedbackOut    = flag.String("feedback-out", "", "directory to write heimdall_feedback.json after the gauntlet completes; computed from result.Analyses via analytics.ComputeWeightDeltas. Feeds the NEXT gauntlet's --apply-feedback.")
+ 		feedbackPolicy = flag.String("feedback-policy", "direct", "policy when consuming --apply-feedback: direct | confidence-weighted | advisory | skip")
+-		resultJSON    = flag.String("result-json", "", "write the canonical TournamentResult JSON to this path (used by scripts/self-tune-loop.sh to diff gauntlets)")
+-		matchup     = flag.Bool("matchup", false, "show full matchup matrix in output")
+-		audit       = flag.Bool("audit", false, "capture full event stream")
++		resultJSON     = flag.String("result-json", "", "write the canonical TournamentResult JSON to this path (used by scripts/self-tune-loop.sh to diff gauntlets)")
++		matchup        = flag.Bool("matchup", false, "show full matchup matrix in output")
++		audit          = flag.Bool("audit", false, "capture full event stream")
+ 		compactMetrics = flag.Bool("compact-metrics", false, "emit compact multiplayer behavior metrics without retaining per-game analytics in result JSON")
+-		reportPath  = flag.String("report", "data/rules/go_tournament_report.md", "markdown report output path")
+-		commander   = flag.Bool("commander", true, "enable commander format (CR §903)")
+-		astPath     = flag.String("ast", "data/rules/ast_dataset.jsonl", "AST dataset JSONL path")
+-		oraclePath  = flag.String("oracle", "data/rules/oracle-cards.json", "Scryfall oracle-cards.json for P/T supplement")
+-		maxTurns    = flag.Int("max-turns", 0, "max turns per game (0 = default 80)")
+-		gameTimeout = flag.Int("game-timeout", 0, "per-game wall-clock timeout in seconds (0 = default 180)")
+-		roundRobin  = flag.Bool("round-robin", false, "round-robin: every C(N,seats) combination plays --games games")
+-		poolMode    = flag.Bool("pool", false, "pool mode: each game picks --seats random decks from the full pool (bug hunting)")
+-		lazyPool    = flag.Bool("lazy-pool", false, "lazy pool: like --pool but loads decks on demand (low memory for large pools)")
+-		pprofFlag     = flag.Bool("pprof", false, "enable pprof profiling (HTTP :6060 + heap dump after first game)")
+-		progressEvery = flag.Int("progress-every", 0, "log progress every N games (0 = auto)")
++		reportPath     = flag.String("report", "data/rules/go_tournament_report.md", "markdown report output path")
++		commander      = flag.Bool("commander", true, "enable commander format (CR §903)")
++		astPath        = flag.String("ast", "data/rules/ast_dataset.jsonl", "AST dataset JSONL path")
++		oraclePath     = flag.String("oracle", "data/rules/oracle-cards.json", "Scryfall oracle-cards.json for P/T supplement")
++		maxTurns       = flag.Int("max-turns", 0, "max turns per game (0 = default 80)")
++		gameTimeout    = flag.Int("game-timeout", 0, "per-game wall-clock timeout in seconds (0 = default 180)")
++		roundRobin     = flag.Bool("round-robin", false, "round-robin: every C(N,seats) combination plays --games games")
++		poolMode       = flag.Bool("pool", false, "pool mode: each game picks --seats random decks from the full pool (bug hunting)")
++		lazyPool       = flag.Bool("lazy-pool", false, "lazy pool: like --pool but loads decks on demand (low memory for large pools)")
++		pprofFlag      = flag.Bool("pprof", false, "enable pprof profiling (HTTP :6060 + heap dump after first game)")
++		progressEvery  = flag.Int("progress-every", 0, "log progress every N games (0 = auto)")
+ 		// Rollback safety net for --apply-feedback (PR #965's closed-loop
+ 		// integration). Captures pre-feedback win rate, compares against
+ 		// post-gauntlet observed rate; if the drop exceeds the threshold
+@@ -98,8 +99,8 @@ func main() {
+ 		// <feedbackPath>.rejected) so the NEXT --apply-feedback invocation
+ 		// with the same path skips the bad attribution. See internal/hat/
+ 		// heimdall_feedback.go ShouldRollback / MarkFeedbackRejected.
+-		baselineWinRate    = flag.Float64("baseline-winrate", 0, "baseline win rate (fraction in [0,1]) for the rollback safety net. When supplied alongside --apply-feedback, the runner compares post-gauntlet aggregate win rate against this baseline; if dropped > --rollback-threshold, the feedback is auto-rejected via a sidecar marker and the active overlay is reset. 0 disables the rollback gate.")
+-		rollbackThreshold  = flag.Float64("rollback-threshold", 0.05, "max allowed win-rate drop in fractional points before --apply-feedback is rolled back. Default 0.05 (5pp). 0 disables the gate even when --baseline-winrate is supplied.")
++		baselineWinRate   = flag.Float64("baseline-winrate", 0, "baseline win rate (fraction in [0,1]) for the rollback safety net. When supplied alongside --apply-feedback, the runner compares post-gauntlet aggregate win rate against this baseline; if dropped > --rollback-threshold, the feedback is auto-rejected via a sidecar marker and the active overlay is reset. 0 disables the rollback gate.")
++		rollbackThreshold = flag.Float64("rollback-threshold", 0.05, "max allowed win-rate drop in fractional points before --apply-feedback is rolled back. Default 0.05 (5pp). 0 disables the gate even when --baseline-winrate is supplied.")
+ 	)
+ 	flag.Parse()
+ 
+@@ -325,6 +326,30 @@ func main() {
+ 	// want byte-level per-StrategyProfile control, but the tournament
+ 	// runner now uses the closed-loop active-overlay path only.
+ 
++	var comboPlans *hat.MetageneComboPlanFile
++	if *comboPlan != "" {
++		loaded, err := hat.LoadMetageneComboPlanFile(*comboPlan)
++		if err != nil {
++			log.Printf("  WARNING: Metagene combo plan ignored: %v", err)
++		} else {
++			comboPlans = loaded
++			log.Printf("  Metagene combo plan: %d deck overlays loaded", len(loaded.Decks))
++		}
++	}
++	loadStrategy := func(deckPath string) *hat.StrategyProfile {
++		profile := hat.LoadStrategyFromFreya(deckPath)
++		if overlay := comboPlans.ForDeck(deckPath); overlay != nil {
++			before := 0
++			if profile != nil {
++				before = len(profile.ComboPieces)
++			}
++			profile = hat.ApplyMetageneComboPlan(profile, overlay)
++			log.Printf("  deck %s: applied %d Metagene proven combo priors (%s)",
++				filepath.Base(deckPath), len(profile.ComboPieces)-before, overlay.ProofRevision)
++		}
++		return profile
++	}
++
+ 	// Hat factory — per-seat when poker hats need Freya strategy data.
+ 	var hatFactories []tournament.HatFactory
+ 	switch strings.ToLower(*hatKind) {
+@@ -337,7 +362,7 @@ func main() {
+ 		// own StrategyProfile from Freya analysis (if available).
+ 		hatFactories = make([]tournament.HatFactory, len(deckPaths))
+ 		for i, p := range deckPaths {
+-			profile := hat.LoadStrategyFromFreya(p) // may be nil
++			profile := loadStrategy(p) // may be nil
+ 			if profile != nil {
+ 				log.Printf("  deck %s: loaded Freya strategy (archetype=%s, combos=%d, tutor_targets=%d)",
+ 					filepath.Base(p), profile.Archetype, len(profile.ComboPieces), len(profile.TutorTargets))
+@@ -358,7 +383,7 @@ func main() {
+ 	case "yggdrasil":
+ 		hatFactories = make([]tournament.HatFactory, len(deckPaths))
+ 		for i, p := range deckPaths {
+-			profile := hat.LoadStrategyFromFreya(p)
++			profile := loadStrategy(p)
+ 			if profile != nil {
+ 				log.Printf("  deck %s: loaded Freya strategy (archetype=%s, combos=%d, tutor_targets=%d)",
+ 					filepath.Base(p), profile.Archetype, len(profile.ComboPieces), len(profile.TutorTargets))
+@@ -414,24 +439,24 @@ func main() {
+ 	}
+ 
+ 	cfg := tournament.TournamentConfig{
+-		Decks:           decks,
+-		NSeats:          *seats,
+-		NGames:          *games,
+-		Seed:            *seed,
+-		HatFactories:    hatFactories,
+-		Workers:         *workers,
+-		CommanderMode:   *commander,
+-		FixedOrder:      *fixedOrder,
+-		AuditEnabled:    *audit,
++		Decks:            decks,
++		NSeats:           *seats,
++		NGames:           *games,
++		Seed:             *seed,
++		HatFactories:     hatFactories,
++		Workers:          *workers,
++		CommanderMode:    *commander,
++		FixedOrder:       *fixedOrder,
++		AuditEnabled:     *audit,
+ 		AnalyticsEnabled: *compactMetrics,
+-		ReportPath:      *reportPath,
+-		MaxTurnsPerGame: *maxTurns,
+-		GameTimeout:     time.Duration(*gameTimeout) * time.Second,
+-		PoolMode:        *poolMode,
+-		LazyPool:        *lazyPool,
+-		DeckPaths:       deckPaths,
+-		Corpus:          corpus,
+-		Meta:            meta,
++		ReportPath:       *reportPath,
++		MaxTurnsPerGame:  *maxTurns,
++		GameTimeout:      time.Duration(*gameTimeout) * time.Second,
++		PoolMode:         *poolMode,
++		LazyPool:         *lazyPool,
++		DeckPaths:        deckPaths,
++		Corpus:           corpus,
++		Meta:             meta,
+ 		PprofEnabled:     *pprofFlag,
+ 		ProgressLogEvery: *progressEvery,
+ 	}
+diff --git a/internal/hat/metagene_combo_plan.go b/internal/hat/metagene_combo_plan.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..ed8bae5b60ca77758971e7b96d0e215496dec475
+--- /dev/null
++++ b/internal/hat/metagene_combo_plan.go
+@@ -0,0 +1,209 @@
++package hat
++
++import (
++	"encoding/json"
++	"fmt"
++	"os"
++	"path/filepath"
++	"strings"
++)
++
++// MetageneComboPlanFile is the versioned, deck-keyed strategy overlay emitted
++// by Metagene. It is deliberately smaller than Freya's strategy format: the
++// overlay only supplies proven combo lines and tutor priorities, then composes
++// with (rather than replacing) any native Freya profile.
++type MetageneComboPlanFile struct {
++	SchemaVersion int                     `json:"schema_version"`
++	Decks         []MetageneDeckComboPlan `json:"decks"`
++}
++
++// MetageneDeckComboPlan applies to one staged tournament deck. Deck is matched
++// against the staged file's base name, case-insensitively.
++type MetageneDeckComboPlan struct {
++	Deck          string              `json:"deck"`
++	ProofRevision string              `json:"proof_revision,omitempty"`
++	Plans         []MetageneComboLine `json:"plans"`
++	TutorTargets  []string            `json:"tutor_targets,omitempty"`
++}
++
++// MetageneComboLine is a proof-gated ComboPlan wire representation.
++type MetageneComboLine struct {
++	Pieces    []string `json:"pieces"`
++	Type      string   `json:"type"`
++	Class     string   `json:"class,omitempty"`
++	CastOrder []string `json:"cast_order,omitempty"`
++	Proof     string   `json:"proof"`
++}
++
++// LoadMetageneComboPlanFile validates a Metagene combo overlay. Invalid lines
++// are ignored conservatively; a malformed file returns an error so the caller
++// can log it and continue with ordinary Yggdrasil behavior.
++func LoadMetageneComboPlanFile(path string) (*MetageneComboPlanFile, error) {
++	data, err := os.ReadFile(path)
++	if err != nil {
++		return nil, err
++	}
++	var plans MetageneComboPlanFile
++	if err := json.Unmarshal(data, &plans); err != nil {
++		return nil, err
++	}
++	if plans.SchemaVersion != 1 {
++		return nil, fmt.Errorf("unsupported Metagene combo-plan schema %d", plans.SchemaVersion)
++	}
++	validDecks := make([]MetageneDeckComboPlan, 0, len(plans.Decks))
++	seenDecks := make(map[string]bool)
++	for _, deck := range plans.Decks {
++		deck.Deck = filepath.Base(strings.TrimSpace(deck.Deck))
++		key := strings.ToLower(deck.Deck)
++		if key == "" || seenDecks[key] {
++			continue
++		}
++		seenDecks[key] = true
++		validLines := make([]MetageneComboLine, 0, len(deck.Plans))
++		for _, line := range deck.Plans {
++			if validated, ok := validateMetageneComboLine(line); ok {
++				validLines = append(validLines, validated)
++			}
++		}
++		if len(validLines) == 0 {
++			continue
++		}
++		deck.Plans = validLines
++		deck.TutorTargets = uniqueNames(deck.TutorTargets)
++		validDecks = append(validDecks, deck)
++	}
++	plans.Decks = validDecks
++	return &plans, nil
++}
++
++// ForDeck returns the validated overlay for one staged deck, or nil when the
++// plan is stale/unmatched. Callers intentionally treat nil as normal play.
++func (plans *MetageneComboPlanFile) ForDeck(deckPath string) *MetageneDeckComboPlan {
++	if plans == nil {
++		return nil
++	}
++	key := strings.ToLower(filepath.Base(deckPath))
++	for i := range plans.Decks {
++		if strings.ToLower(plans.Decks[i].Deck) == key {
++			return &plans.Decks[i]
++		}
++	}
++	return nil
++}
++
++// ApplyMetageneComboPlan merges a proof-gated overlay into a Freya profile.
++// The resulting ComboPieces are priors only: Yggdrasil's ComboSequencer still
++// checks zones, mana and legal actions on every decision and falls back to its
++// ordinary evaluator whenever the line cannot be followed.
++func ApplyMetageneComboPlan(profile *StrategyProfile, overlay *MetageneDeckComboPlan) *StrategyProfile {
++	if overlay == nil || len(overlay.Plans) == 0 {
++		return profile
++	}
++	if profile == nil {
++		profile = &StrategyProfile{}
++	}
++	if profile.Archetype == "" {
++		profile.Archetype = "Combo"
++	}
++	if profile.CardRoles == nil {
++		profile.CardRoles = make(map[string]string)
++	}
++	seenPlans := make(map[string]bool)
++	for _, existing := range profile.ComboPieces {
++		seenPlans[comboPlanKey(existing.Pieces)] = true
++	}
++	priorities := append([]string{}, overlay.TutorTargets...)
++	for _, line := range overlay.Plans {
++		key := comboPlanKey(line.Pieces)
++		if seenPlans[key] {
++			continue
++		}
++		seenPlans[key] = true
++		profile.ComboPieces = append(profile.ComboPieces, ComboPlan{
++			Pieces:    append([]string{}, line.Pieces...),
++			Type:      line.Type,
++			Class:     line.Class,
++			CastOrder: append([]string{}, line.CastOrder...),
++		})
++		for _, piece := range line.Pieces {
++			profile.CardRoles[piece] = "Combo"
++			priorities = append(priorities, piece)
++		}
++	}
++	profile.TutorTargets = uniqueNames(append(priorities, profile.TutorTargets...))
++	if profile.GameplanSummary == "" {
++		profile.GameplanSummary = "Assemble and execute a Metagene-proven combo line."
++	}
++	return profile
++}
++
++func validateMetageneComboLine(line MetageneComboLine) (MetageneComboLine, bool) {
++	switch strings.ToLower(strings.TrimSpace(line.Proof)) {
++	case "symbolically_proven", "hexdek_executed", "cross_engine_verified", "arena_verified":
++	default:
++		return MetageneComboLine{}, false
++	}
++	line.Pieces = uniqueNames(line.Pieces)
++	if len(line.Pieces) < 2 || len(line.Pieces) > 5 {
++		return MetageneComboLine{}, false
++	}
++	line.Type = strings.ToLower(strings.TrimSpace(line.Type))
++	switch line.Type {
++	case "infinite", "determined", "finisher":
++	default:
++		return MetageneComboLine{}, false
++	}
++	line.Class = strings.ToLower(strings.TrimSpace(line.Class))
++	if len(line.CastOrder) == 0 {
++		line.CastOrder = append([]string{}, line.Pieces...)
++	} else {
++		line.CastOrder = uniqueNames(line.CastOrder)
++		pieceSet := make(map[string]bool, len(line.Pieces))
++		for _, piece := range line.Pieces {
++			pieceSet[strings.ToLower(piece)] = true
++		}
++		for _, card := range line.CastOrder {
++			if !pieceSet[strings.ToLower(card)] {
++				return MetageneComboLine{}, false
++			}
++		}
++		for _, piece := range line.Pieces {
++			if !containsName(line.CastOrder, piece) {
++				line.CastOrder = append(line.CastOrder, piece)
++			}
++		}
++	}
++	return line, true
++}
++
++func uniqueNames(names []string) []string {
++	seen := make(map[string]bool, len(names))
++	out := make([]string, 0, len(names))
++	for _, name := range names {
++		name = strings.TrimSpace(name)
++		key := strings.ToLower(name)
++		if name == "" || seen[key] {
++			continue
++		}
++		seen[key] = true
++		out = append(out, name)
++	}
++	return out
++}
++
++func containsName(names []string, wanted string) bool {
++	for _, name := range names {
++		if strings.EqualFold(name, wanted) {
++			return true
++		}
++	}
++	return false
++}
++
++func comboPlanKey(pieces []string) string {
++	normalized := make([]string, 0, len(pieces))
++	for _, piece := range pieces {
++		normalized = append(normalized, strings.ToLower(strings.TrimSpace(piece)))
++	}
++	return strings.Join(normalized, "\x00")
++}
+diff --git a/internal/hat/metagene_combo_plan_test.go b/internal/hat/metagene_combo_plan_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..afa429aee4f91bd91eb85bc86d21d95cd6e9d4fd
+--- /dev/null
++++ b/internal/hat/metagene_combo_plan_test.go
+@@ -0,0 +1,82 @@
++package hat
++
++import (
++	"os"
++	"path/filepath"
++	"testing"
++)
++
++func TestMetageneComboPlan_LoadMergeAndFallback(t *testing.T) {
++	dir := t.TempDir()
++	path := filepath.Join(dir, "combo-plan.json")
++	payload := `{
++  "schema_version": 1,
++  "decks": [{
++    "deck": "deck-0.txt",
++    "proof_revision": "combo-action-graph-v1",
++    "tutor_targets": ["Piece B"],
++    "plans": [
++      {"pieces":["Piece A","Piece B"],"type":"infinite","class":"infinite_damage","cast_order":["Piece A","Piece B"],"proof":"symbolically_proven"},
++      {"pieces":["Rumor A","Rumor B"],"type":"infinite","proof":"corpus_only"}
++    ]
++  }]
++}`
++	if err := os.WriteFile(path, []byte(payload), 0o600); err != nil {
++		t.Fatal(err)
++	}
++	plans, err := LoadMetageneComboPlanFile(path)
++	if err != nil {
++		t.Fatal(err)
++	}
++	if got := plans.ForDeck(filepath.Join(dir, "DECK-0.TXT")); got == nil || len(got.Plans) != 1 {
++		t.Fatalf("expected one proof-gated plan, got %#v", got)
++	}
++	if plans.ForDeck(filepath.Join(dir, "stale.txt")) != nil {
++		t.Fatal("stale deck key must fall back to ordinary play")
++	}
++	base := &StrategyProfile{Archetype: "Control", TutorTargets: []string{"Existing"}}
++	merged := ApplyMetageneComboPlan(base, plans.ForDeck("deck-0.txt"))
++	if merged.Archetype != "Control" || len(merged.ComboPieces) != 1 {
++		t.Fatalf("unexpected merged profile: %#v", merged)
++	}
++	if len(merged.TutorTargets) != 3 || merged.CardRoles["Piece A"] != "Combo" {
++		t.Fatalf("combo priorities were not merged: %#v", merged)
++	}
++	if ApplyMetageneComboPlan(merged, nil) != merged {
++		t.Fatal("nil overlay must preserve the normal strategy profile")
++	}
++}
++
++func TestMetageneComboPlan_RejectsMalformedOrUnsupportedLines(t *testing.T) {
++	dir := t.TempDir()
++	path := filepath.Join(dir, "combo-plan.json")
++	payload := `{"schema_version":1,"decks":[{"deck":"deck.txt","plans":[
++      {"pieces":["Only One"],"type":"infinite","proof":"symbolically_proven"},
++      {"pieces":["A","B"],"type":"wishful","proof":"symbolically_proven"},
++      {"pieces":["A","B"],"type":"infinite","cast_order":["Not A Piece"],"proof":"symbolically_proven"}
++    ]}]}`
++	if err := os.WriteFile(path, []byte(payload), 0o600); err != nil {
++		t.Fatal(err)
++	}
++	plans, err := LoadMetageneComboPlanFile(path)
++	if err != nil {
++		t.Fatal(err)
++	}
++	if got := plans.ForDeck("deck.txt"); got != nil {
++		t.Fatalf("invalid plans must not affect play: %#v", got)
++	}
++}
++
++func TestMetageneComboPlan_TelemetryDistinguishesReachFromResolutionProof(t *testing.T) {
++	h := NewYggdrasilHat(&StrategyProfile{ComboPieces: []ComboPlan{{Pieces: []string{"A", "B"}, Type: "infinite"}}}, 0)
++	h.observeComboAssessment(ComboAssessment{Assembling: true})
++	assembling, executable, actions := h.ComboPlanTelemetry()
++	if !assembling || executable || actions != 0 {
++		t.Fatalf("unexpected assembly telemetry: %v %v %d", assembling, executable, actions)
++	}
++	h.observeComboAssessment(ComboAssessment{Executable: true})
++	assembling, executable, _ = h.ComboPlanTelemetry()
++	if !assembling || !executable {
++		t.Fatal("executable reach was not retained")
++	}
++}
+diff --git a/internal/hat/yggdrasil.go b/internal/hat/yggdrasil.go
+index d977d44a079062a1fe7afcbf6ec6f1d399edf7e4..6777c2aaff00d625a2d71e0837f1815ebc92e61b 100644
+--- a/internal/hat/yggdrasil.go
++++ b/internal/hat/yggdrasil.go
+@@ -49,6 +49,12 @@ type YggdrasilHat struct {
+ 	// nil when the deck has no combo lines (from Freya).
+ 	comboSeq *ComboSequencer
+ 
++	// Compact per-game combo-plan telemetry. These are observations and
++	// legal-action choices, not proof that a loop resolved successfully.
++	comboAssemblingSeen  bool
++	comboExecutableSeen  bool
++	comboPriorityActions int
++
+ 	// Plan state machine: tracks strategic intent and transitions.
+ 	planState PlanState
+ 
+@@ -420,10 +426,10 @@ func (h *YggdrasilHat) PlanCurrent() GamePlan { return h.planState.Current }
+ 
+ func NewYggdrasilHatWithNoise(strategy *StrategyProfile, budget int, noise float64) *YggdrasilHat {
+ 	h := &YggdrasilHat{
+-		Evaluator:     NewEvaluator(strategy),
+-		Strategy:      strategy,
+-		Budget:        budget,
+-		Noise:         noise,
++		Evaluator: NewEvaluator(strategy),
++		Strategy:  strategy,
++		Budget:    budget,
++		Noise:     noise,
+ 		// Determinism (r63 seed-determinism audit): seed noiseRNG from a FIXED
+ 		// value, NOT the global rand. selectAmongTop / applyNoise consume this
+ 		// stream to pick among similarly-scored attack targets, so a global-
+@@ -2474,6 +2480,7 @@ func (h *YggdrasilHat) refreshPlanState(gs *gameengine.GameState, seatIdx int) {
+ 		return
+ 	}
+ 	ca := h.comboSeq.Evaluate(gs, seatIdx)
++	h.observeComboAssessment(ca)
+ 	maxThreat := 0.0
+ 	for _, t := range h.assessAllThreats(gs, seatIdx) {
+ 		if t.EvalScore > maxThreat {
+@@ -2485,6 +2492,28 @@ func (h *YggdrasilHat) refreshPlanState(gs *gameengine.GameState, seatIdx int) {
+ 	h.Evaluator.PlanMultiplier = &pm
+ }
+ 
++func (h *YggdrasilHat) observeComboAssessment(assessment ComboAssessment) {
++	if h == nil {
++		return
++	}
++	if assessment.Assembling || assessment.Executable {
++		h.comboAssemblingSeen = true
++	}
++	if assessment.Executable {
++		h.comboExecutableSeen = true
++	}
++}
++
++// ComboPlanTelemetry exposes bounded counters to the tournament aggregator.
++// It intentionally reports "reached" and "prioritized" rather than claiming
++// a combo resolved; Metagene upgrades proof only through a conformance result.
++func (h *YggdrasilHat) ComboPlanTelemetry() (assembling, executable bool, priorityActions int) {
++	if h == nil {
++		return false, false, 0
++	}
++	return h.comboAssemblingSeen, h.comboExecutableSeen, h.comboPriorityActions
++}
++
+ // recordDecisionTier increments the per-tier counter. Safe to call from
+ // any decision entry point.
+ func (h *YggdrasilHat) recordDecisionTier(t DecisionTier) {
+@@ -4993,6 +5022,7 @@ func (h *YggdrasilHat) ChooseCastFromHand(gs *gameengine.GameState, seatIdx int,
+ 	// pressure). Jamming into a known counterspell is worse than waiting.
+ 	if h.comboSeq != nil {
+ 		assessment := h.comboSeq.Evaluate(gs, seatIdx)
++		h.observeComboAssessment(assessment)
+ 		if assessment.Executable && assessment.NextAction != "" {
+ 			entropyBlocked := false
+ 			if gs != nil {
+@@ -5022,6 +5052,7 @@ func (h *YggdrasilHat) ChooseCastFromHand(gs *gameengine.GameState, seatIdx int,
+ 						h.logf("%s COMBO-CAST seat=%d %s (line: %s)",
+ 							roundTag(gs, seatIdx), seatIdx, c.DisplayName(),
+ 							assessment.BestLine.Name)
++						h.comboPriorityActions++
+ 						return c
+ 					}
+ 				}
+@@ -5558,6 +5589,7 @@ func (h *YggdrasilHat) ChooseActivation(gs *gameengine.GameState, seatIdx int, o
+ 	// action matches an activation (already on battlefield), prefer it.
+ 	if h.comboSeq != nil {
+ 		assessment := h.comboSeq.Evaluate(gs, seatIdx)
++		h.observeComboAssessment(assessment)
+ 		if assessment.Executable && assessment.NextAction != "" {
+ 			for i := range options {
+ 				opt := &options[i]
+@@ -5567,6 +5599,7 @@ func (h *YggdrasilHat) ChooseActivation(gs *gameengine.GameState, seatIdx int, o
+ 						roundTag(gs, seatIdx), seatIdx,
+ 						opt.Permanent.Card.DisplayName(),
+ 						assessment.BestLine.Name)
++					h.comboPriorityActions++
+ 					return opt
+ 				}
+ 			}
+diff --git a/internal/tournament/aggregate.go b/internal/tournament/aggregate.go
+index 110c2f96c9b6286547a63da58e600e9849ce1afc..85ff6dc0fc2a03f7ce6513431cb24aaf8ed27b1a 100644
+--- a/internal/tournament/aggregate.go
++++ b/internal/tournament/aggregate.go
+@@ -99,6 +99,7 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 				r.WinsByCommanderBySeat[name][seatIdx]++
+ 			}
+ 		}
++		aggregateComboPlanTelemetry(r.CommanderMetrics, outcome.PostGameStats)
+ 
+ 		// Turn-length distribution: [0]=1-5, [1]=6-10, [2]=11-20, [3]=21+
+ 		switch {
+@@ -235,6 +236,25 @@ func aggregate(outcomes <-chan GameOutcome, nGames, nSeats int, commanderNames [
+ 	return r
+ }
+ 
++func aggregateComboPlanTelemetry(metrics map[string]*CommanderMetricSummary, stats []SeatStats) {
++	for _, seat := range stats {
++		summary := metrics[seat.CommanderName]
++		if summary == nil {
++			continue
++		}
++		if seat.ComboAssembling {
++			summary.ComboAssemblingGames++
++		}
++		if seat.ComboExecutable {
++			summary.ComboExecutableGames++
++		}
++		summary.ComboPriorityActions += seat.ComboPriorityActions
++		if seat.Won && seat.ComboExecutable && seat.ComboPriorityActions > 0 {
++			summary.ComboPlanWins++
++		}
++	}
++}
++
+ func aggregateCommanderMetrics(metrics map[string]*CommanderMetricSummary, analysis *analytics.GameAnalysis) {
+ 	if analysis == nil {
+ 		return
+diff --git a/internal/tournament/metagene_compact_metrics_test.go b/internal/tournament/metagene_compact_metrics_test.go
+index 82519f19d9c24db504feadea5d4c365fb18606ee..ef1c2d5f6e227892c256f39bfe7f4e6903489aaf 100644
+--- a/internal/tournament/metagene_compact_metrics_test.go
++++ b/internal/tournament/metagene_compact_metrics_test.go
+@@ -41,3 +41,18 @@ func TestAggregateCommanderMetricsTracksBehaviorAndKingmakingSignal(t *testing.T
+ 		t.Fatalf("kingmaking signals = %d, want 1", alpha.KingmakingSignals)
+ 	}
+ }
++
++func TestAggregateComboPlanTelemetryUsesTruthfulReachLabels(t *testing.T) {
++	metrics := map[string]*CommanderMetricSummary{
++		"Alpha": {TargetActions: map[string]int{}},
++	}
++	aggregateComboPlanTelemetry(metrics, []SeatStats{{
++		CommanderName: "Alpha", Won: true, ComboAssembling: true,
++		ComboExecutable: true, ComboPriorityActions: 2,
++	}})
++	got := metrics["Alpha"]
++	if got.ComboAssemblingGames != 1 || got.ComboExecutableGames != 1 ||
++		got.ComboPriorityActions != 2 || got.ComboPlanWins != 1 {
++		t.Fatalf("unexpected combo telemetry: %+v", got)
++	}
++}
+diff --git a/internal/tournament/results.go b/internal/tournament/results.go
+index 19cfec480e62b78942e556ef7fb3d1f44c539976..4500d6bfb1394626978539f227b210c616cb562f 100644
+--- a/internal/tournament/results.go
++++ b/internal/tournament/results.go
+@@ -88,45 +88,52 @@ type GameOutcome struct {
+ // SeatStats is a per-seat summary emitted after every game regardless
+ // of audit/analytics flags. Designed for 7174n1c's stat analysis pipeline.
+ type SeatStats struct {
+-	CommanderIdx  int
+-	CommanderName string
+-	Won           bool
+-	FinalLife     int
+-	TurnOfDeath   int
+-	LandsPlayed   int
+-	SpellsCast    int
+-	CreaturesOnBoard int
+-	TotalBoardSize   int
+-	HandSize      int
+-	GraveyardSize int
+-	ManaSourceCount int
+-	DamageDealt   int
+-	DamageTaken   int
+-	Conceded      bool
++	CommanderIdx         int
++	CommanderName        string
++	Won                  bool
++	FinalLife            int
++	TurnOfDeath          int
++	LandsPlayed          int
++	SpellsCast           int
++	CreaturesOnBoard     int
++	TotalBoardSize       int
++	HandSize             int
++	GraveyardSize        int
++	ManaSourceCount      int
++	DamageDealt          int
++	DamageTaken          int
++	Conceded             bool
++	ComboAssembling      bool
++	ComboExecutable      bool
++	ComboPriorityActions int
+ }
+ 
+ // CommanderMetricSummary is a compact, deck-indexed aggregate used by
+ // high-volume external evaluators. It preserves multiplayer behavior signals
+ // without retaining every per-game analysis in TournamentResult JSON.
+ type CommanderMetricSummary struct {
+-	Games             int            `json:"games"`
+-	Wins              int            `json:"wins"`
+-	LandsPlayed       int            `json:"lands_played"`
+-	ManaSpent         int            `json:"mana_spent"`
+-	ManaWasted        int            `json:"mana_wasted"`
+-	DamageDealt       int            `json:"damage_dealt"`
+-	DamageTaken       int            `json:"damage_taken"`
+-	CreaturesLost     int            `json:"creatures_lost"`
+-	CreaturesKilled   int            `json:"creatures_killed"`
+-	SpellsCast        int            `json:"spells_cast"`
+-	CountersCast      int            `json:"counters_cast"`
+-	RemovalCast       int            `json:"removal_cast"`
+-	PeakBoardSize     int            `json:"peak_board_size"`
+-	PeakLife          int            `json:"peak_life"`
+-	FinalLife         int            `json:"final_life"`
+-	Survived          int            `json:"survived"`
+-	TargetActions     map[string]int `json:"target_actions"`
+-	KingmakingSignals int            `json:"kingmaking_signals"`
++	Games                int            `json:"games"`
++	Wins                 int            `json:"wins"`
++	LandsPlayed          int            `json:"lands_played"`
++	ManaSpent            int            `json:"mana_spent"`
++	ManaWasted           int            `json:"mana_wasted"`
++	DamageDealt          int            `json:"damage_dealt"`
++	DamageTaken          int            `json:"damage_taken"`
++	CreaturesLost        int            `json:"creatures_lost"`
++	CreaturesKilled      int            `json:"creatures_killed"`
++	SpellsCast           int            `json:"spells_cast"`
++	CountersCast         int            `json:"counters_cast"`
++	RemovalCast          int            `json:"removal_cast"`
++	PeakBoardSize        int            `json:"peak_board_size"`
++	PeakLife             int            `json:"peak_life"`
++	FinalLife            int            `json:"final_life"`
++	Survived             int            `json:"survived"`
++	TargetActions        map[string]int `json:"target_actions"`
++	KingmakingSignals    int            `json:"kingmaking_signals"`
++	ComboAssemblingGames int            `json:"combo_assembling_games"`
++	ComboExecutableGames int            `json:"combo_executable_games"`
++	ComboPriorityActions int            `json:"combo_priority_actions"`
++	ComboPlanWins        int            `json:"combo_plan_wins"`
+ }
+ 
+ // SchemaVersion identifies the canonical TournamentResult JSON
+diff --git a/internal/tournament/runner.go b/internal/tournament/runner.go
+index 76bd51a958b3ae40714b011f5638bfefca8aae30..643115f4aadbf49aba816091f72a269ea097e2ff 100644
+--- a/internal/tournament/runner.go
++++ b/internal/tournament/runner.go
+@@ -459,10 +459,10 @@ func runOneGameWithOrder(gameIdx int, decks []*deckparser.TournamentDeck, hats [
+ 	gs.LogEvent(gameengine.Event{
+ 		Kind: "game_start", Seat: gs.Active, Target: -1,
+ 		Details: map[string]interface{}{
+-			"on_the_play":       gs.Active,
+-			"n_seats":           nSeats,
+-			"commander_format":  commanderMode,
+-			"game_idx":          gameIdx,
++			"on_the_play":      gs.Active,
++			"n_seats":          nSeats,
++			"commander_format": commanderMode,
++			"game_idx":         gameIdx,
+ 		},
+ 	})
+ 
+@@ -704,12 +704,12 @@ func runOneGameWithOrder(gameIdx int, decks []*deckparser.TournamentDeck, hats [
+ 		}
+ 		orig := originalIdxForSeat[i]
+ 		ss := SeatStats{
+-			CommanderIdx: orig,
+-			Won:          i == out.Winner,
+-			FinalLife:    s.Life,
+-			HandSize:     len(s.Hand),
++			CommanderIdx:  orig,
++			Won:           i == out.Winner,
++			FinalLife:     s.Life,
++			HandSize:      len(s.Hand),
+ 			GraveyardSize: len(s.Graveyard),
+-			Conceded:     s.LossReason == "concession",
++			Conceded:      s.LossReason == "concession",
+ 		}
+ 		if orig < len(decks) {
+ 			ss.CommanderName = decks[orig].CommanderName
+@@ -731,6 +731,9 @@ func runOneGameWithOrder(gameIdx int, decks []*deckparser.TournamentDeck, hats [
+ 		ss.CreaturesOnBoard = creatures
+ 		ss.ManaSourceCount = hat.CountManaRocksAndLands(s)
+ 		ss.SpellsCast = s.SpellsCastThisTurn + s.SpellsCastLastTurn
++		if yh, ok := s.Hat.(*hat.YggdrasilHat); ok {
++			ss.ComboAssembling, ss.ComboExecutable, ss.ComboPriorityActions = yh.ComboPlanTelemetry()
++		}
+ 		out.PostGameStats[i] = ss
+ 	}
+ 
+@@ -964,7 +967,7 @@ func runPool(cfg TournamentConfig, workers, maxTurns int, gameTimeout time.Durat
+ 
+ 	// Sort by games played desc for coverage report.
+ 	type entry struct {
+-		name       string
++		name        string
+ 		wins, games int
+ 	}
+ 	entries := make([]entry, 0, len(stats))
+

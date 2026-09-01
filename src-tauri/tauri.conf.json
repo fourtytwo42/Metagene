@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Metagene",
+  "version": "0.3.2",
+  "identifier": "dev.metagene.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Metagene — Deck Evolution Lab",
+        "width": 1440,
+        "height": 940,
+        "minWidth": 1080,
+        "minHeight": 720,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Metagene contributors",
+    "copyright": "Copyright 2026 Metagene contributors",
+    "resources": [
+      "resources/forge-adapter/ForgeConformanceAdapter.java",
+      "resources/forge-adapter/forge-conformance-adapter.jar",
+      "resources/hexdek-adapter/main.go",
+      "resources/hexdek-fixed-order-v1.patch",
+      "resources/hexdek-commander-metrics-v1.patch",
+      "../LICENSE",
+      "../THIRD_PARTY_NOTICES.md"
+    ]
+  }
+}

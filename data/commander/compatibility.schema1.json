@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "policy_id": "commander-pairing-2026-08",
+  "rules": [
+    {
+      "id": "partner",
+      "kind": "shared_oracle_line",
+      "line": "partner",
+      "allow_reminder": true
+    },
+    {
+      "id": "partner-with",
+      "kind": "named_oracle_prefix",
+      "prefix": "partner with "
+    },
+    {
+      "id": "friends-forever",
+      "kind": "shared_oracle_line",
+      "line": "friends forever",
+      "allow_reminder": true
+    },
+    {
+      "id": "choose-a-background",
+      "kind": "oracle_line_with_other_type",
+      "line": "choose a background",
+      "other_type_contains": "background"
+    },
+    {
+      "id": "doctors-companion",
+      "kind": "oracle_line_with_other_type",
+      "line": "doctor's companion",
+      "other_type_contains": "time lord doctor"
+    }
+  ]
+}

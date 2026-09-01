@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "policy_id": "evaluation-splits-2026-08",
+  "train_share": 0.60,
+  "validation_share": 0.20,
+  "holdout_share": 0.20,
+  "train_seed_offset": 11694633085474628615,
+  "validation_seed_offset": 15111065706836454659,
+  "holdout_seed_offset": 10723151780598845931,
+  "minimum_distinct_field_size": 3,
+  "target_interval_coverage": 0.90,
+  "notes": [
+    "Opponent partitions are assigned by stable deck-genome hash, never by input order.",
+    "Small fields and Commander pods reuse opponents across phases but always use disjoint deterministic seed domains.",
+    "Holdout evidence is recorded after selection and never changes the winner of the run that produced it."
+  ]
+}

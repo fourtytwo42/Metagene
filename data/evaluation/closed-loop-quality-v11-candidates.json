@@ -1,0 +1,44 @@
+{
+  "description": "Historic blank-start outputs after 100,000 generations that exposed false mana, no-cost casting, shared-search, narrow-hate, and closing-pressure exploits.",
+  "candidates": [
+    {
+      "id": 1,
+      "deck": [
+        "2 Mirrex", "1 Wastes", "1 World Map", "1 Living End", "3 Buried Ruin",
+        "3 Fiery Islet", "3 Urza's Tome", "2 Colossal Plow", "4 Fogwell's Gym",
+        "3 Masked Meower", "3 Bag of Holding", "3 Combat Courier", "4 Nutrient Block",
+        "4 Sticky Fingers", "1 Stone of Erech", "3 Tormod's Crypt", "2 Cacophony Scamp",
+        "4 Sunbaked Canyon", "1 Sunbillow Verge", "4 Diamond Pick-Axe",
+        "1 Fountainport Bell", "3 Marketback Walker", "1 Crashing Footfalls",
+        "1 Slagdrill Scrapper", "2 Cragcrown Pathway // Timbercrown Pathway"
+      ],
+      "expected": [
+        "Living End and Crashing Footfalls are not normally castable",
+        "Treasure reminder text does not make Sticky Fingers or Diamond Pick-Axe mana sources",
+        "Colossal Plow's attack trigger is not an unconditional mana source",
+        "Mirrex does not receive unconditional five-color fixing",
+        "excess graveyard hate is penalized"
+      ]
+    },
+    {
+      "id": 2,
+      "deck": [
+        "1 Wastes", "1 Mox Amber", "1 World Map", "1 Buried Ruin", "2 Fiery Islet",
+        "2 Colossal Plow", "4 Fogwell's Gym", "3 Bag of Holding", "3 Combat Courier",
+        "4 Nutrient Block", "4 Sticky Fingers", "4 Tormod's Crypt", "2 Petrified Field",
+        "2 Spiked Pit Trap", "4 Sunbaked Canyon", "4 Sunbillow Verge",
+        "3 Diamond Pick-Axe", "2 Pyrite Spellbomb", "1 Voldaren Epicure",
+        "1 Fountainport Bell", "2 Hangarback Walker", "3 Marketback Walker",
+        "4 Riveteers Requisitioner", "1 Sokenzan, Crucible of Defiance",
+        "1 Needleverge Pathway // Pillarverge Pathway"
+      ],
+      "expected": [
+        "Mox Amber produces no colored mana without a controlled legendary creature or planeswalker",
+        "Treasure reminder text does not make Riveteers Requisitioner a mana source",
+        "Sunbillow Verge's red mode is not live without its land-subtype prerequisite",
+        "distinct basic-search cards compete for the same Wastes",
+        "excess graveyard hate is penalized"
+      ]
+    }
+  ]
+}

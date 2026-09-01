@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "policy_id": "commander-multiplayer-objectives-2026-08",
+  "structural_trials": 128,
+  "closing_turn_scale": 12.0,
+  "ranking_weight": 0.50,
+  "objectives": {
+    "pod_win_share": 0.30,
+    "seat_floor": 0.15,
+    "threat_development": 0.12,
+    "interaction": 0.12,
+    "recovery": 0.10,
+    "mana_reliability": 0.10,
+    "closing_ability": 0.11
+  },
+  "penalties": {
+    "draw_or_stall_rate": 0.50,
+    "timeout_or_crash_rate": 1.00,
+    "concession_rate": 0.50,
+    "seat_bias": 0.15,
+    "kingmaking_signal": 0.50
+  },
+  "notes": [
+    "Pod win share, seat outcomes, game length, elimination placement, failures, and concessions are rules-engine observations.",
+    "Threat development, interaction, recovery, mana reliability, targeting, and kingmaking signals use compact event-derived engine telemetry when the managed adapter provides it; older engines fall back to labeled structural proxies.",
+    "Political intent cannot be inferred reliably: the kingmaking signal is a conservative targeting/outcome heuristic, not a claim about intent."
+  ]
+}

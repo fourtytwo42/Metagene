@@ -1,0 +1,43 @@
+[
+  {
+    "TID": "stale",
+    "tournamentName": "Old Standard Event",
+    "format": "STANDARD",
+    "bracketUrl": "https://example.test/events/stale",
+    "startDate": 1700000000,
+    "standings": [{ "name": "Old list", "decklist_text": "Deck\n60 Plains" }]
+  },
+  {
+    "TID": "wrong-format",
+    "tournamentName": "Modern Event in Standard Feed",
+    "format": "MODERN",
+    "bracketUrl": "https://example.test/events/wrong",
+    "startDate": 1799990000,
+    "standings": [{ "name": "Wrong format", "decklist_text": "Deck\n60 Plains" }]
+  },
+  {
+    "TID": "ambiguous",
+    "tournamentName": "Malformed List Event",
+    "format": "STANDARD",
+    "bracketUrl": "https://example.test/events/ambiguous",
+    "startDate": 1799990000,
+    "standings": [{ "name": "Malformed", "decklist_text": "Deck\nfour Plains" }]
+  },
+  {
+    "TID": "illegal",
+    "tournamentName": "Short List Event",
+    "format": "STANDARD",
+    "bracketUrl": "https://example.test/events/illegal",
+    "startDate": 1799990000,
+    "standings": [{ "name": "Short", "decklist_text": "Deck\n59 Plains" }]
+  },
+  {
+    "TID": "schema-addition",
+    "tournamentName": "Forward Compatible Event",
+    "format": "STANDARD",
+    "bracketUrl": "https://example.test/events/schema",
+    "startDate": 1799990000,
+    "newTopLevelField": { "safe": true },
+    "standings": [{ "name": "Valid", "decklist_text": "Deck\n56 Plains\n4 Healer's Hawk", "newStandingField": 42 }]
+  }
+]

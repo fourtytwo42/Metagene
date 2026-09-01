@@ -1,0 +1,1011 @@
+{
+  "schema_version": 2,
+  "suite_id": "metagene-critical-interactions",
+  "suite_version": 2,
+  "scenarios": [
+    {
+      "id": "tokens.parallel-lives-copy",
+      "version": 1,
+      "title": "Mythos of Illuna copies Parallel Lives as tokens",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 42,
+      "cards": [
+        "Parallel Lives",
+        "Mythos of Illuna",
+        "Forest",
+        "Island"
+      ],
+      "claims": [
+        {
+          "card_name": "Parallel Lives",
+          "subject_id": "oc-163604cb5d88636b803053d952b4f897461d78b4387f1a65a771df48ad53cd71",
+          "assertion": "The replacement effect doubles the token-copy event.",
+          "ai_decision": false
+        },
+        {
+          "card_name": "Mythos of Illuna",
+          "subject_id": "oc-fa48b245816bc73c94b4338a1c38cdbd1891d90ff8b9c7c7d4238e2d896dfc9c",
+          "assertion": "The spell legally targets Parallel Lives and creates token copies with copied characteristics.",
+          "ai_decision": true
+        }
+      ],
+      "initial_state": {
+        "turn": 4,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "green": 1,
+              "blue": 3
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "parallel-lives",
+            "card": "Parallel Lives",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "mythos",
+            "card": "Mythos of Illuna",
+            "owner": 1,
+            "zone": "hand"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "mythos",
+          "targets": [
+            "parallel-lives"
+          ],
+          "choices": {
+            "spend": {
+              "green": 1,
+              "blue": 3
+            }
+          }
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/battlefield/seat-1/cards/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 3
+        },
+        {
+          "path": "/battlefield/seat-1/tokens/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 2
+        },
+        {
+          "path": "/graveyard/seat-1/cards/Mythos of Illuna/count",
+          "operator": "equals",
+          "expected": 1
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "replacement.applied",
+          "token.created",
+          "zone.changed"
+        ],
+        "payload_fields": {
+          "replacement.applied": [
+            "affected_event",
+            "multiplier",
+            "source_card"
+          ],
+          "token.created": [
+            "card_name",
+            "controller",
+            "quantity"
+          ],
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ]
+        }
+      }
+    },
+    {
+      "id": "tokens.stacked-parallel-lives-replacements",
+      "version": 1,
+      "title": "Two Parallel Lives replacements multiply one copy event",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 43,
+      "cards": [
+        "Parallel Lives",
+        "Mythos of Illuna",
+        "Forest",
+        "Island"
+      ],
+      "claims": [
+        {
+          "card_name": "Parallel Lives",
+          "subject_id": "oc-163604cb5d88636b803053d952b4f897461d78b4387f1a65a771df48ad53cd71",
+          "assertion": "Multiple replacement effects compose to multiply one token event.",
+          "ai_decision": false
+        },
+        {
+          "card_name": "Mythos of Illuna",
+          "subject_id": "oc-fa48b245816bc73c94b4338a1c38cdbd1891d90ff8b9c7c7d4238e2d896dfc9c",
+          "assertion": "The spell selects the legal copied-permanent target.",
+          "ai_decision": true
+        }
+      ],
+      "initial_state": {
+        "turn": 5,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "green": 1,
+              "blue": 3
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "parallel-lives-a",
+            "card": "Parallel Lives",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "parallel-lives-b",
+            "card": "Parallel Lives",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "mythos",
+            "card": "Mythos of Illuna",
+            "owner": 1,
+            "zone": "hand"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "mythos",
+          "targets": [
+            "parallel-lives-a"
+          ],
+          "choices": {
+            "spend": {
+              "green": 1,
+              "blue": 3
+            }
+          }
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/battlefield/seat-1/cards/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 6
+        },
+        {
+          "path": "/battlefield/seat-1/tokens/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 4
+        },
+        {
+          "path": "/graveyard/seat-1/cards/Mythos of Illuna/count",
+          "operator": "equals",
+          "expected": 1
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "replacement.applied",
+          "token.created",
+          "zone.changed"
+        ],
+        "payload_fields": {
+          "replacement.applied": [
+            "affected_event",
+            "multiplier",
+            "source_card"
+          ],
+          "token.created": [
+            "card_name",
+            "controller",
+            "quantity"
+          ],
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ]
+        }
+      }
+    },
+    {
+      "id": "tokens.copied-doubler-retains-ability",
+      "version": 1,
+      "title": "Parallel Lives token copies retain the token replacement ability",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 44,
+      "cards": [
+        "Parallel Lives",
+        "Mythos of Illuna",
+        "Forest",
+        "Island"
+      ],
+      "claims": [
+        {
+          "card_name": "Parallel Lives",
+          "subject_id": "oc-163604cb5d88636b803053d952b4f897461d78b4387f1a65a771df48ad53cd71",
+          "assertion": "A token copy retains the replacement ability and applies it to later token creation.",
+          "ai_decision": false
+        },
+        {
+          "card_name": "Mythos of Illuna",
+          "subject_id": "oc-fa48b245816bc73c94b4338a1c38cdbd1891d90ff8b9c7c7d4238e2d896dfc9c",
+          "assertion": "Repeated legal casts select the copied doubler as their target.",
+          "ai_decision": true
+        }
+      ],
+      "initial_state": {
+        "turn": 6,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "green": 2,
+              "blue": 6
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "parallel-lives",
+            "card": "Parallel Lives",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "mythos-a",
+            "card": "Mythos of Illuna",
+            "owner": 1,
+            "zone": "hand"
+          },
+          {
+            "alias": "mythos-b",
+            "card": "Mythos of Illuna",
+            "owner": 1,
+            "zone": "hand"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "mythos-a",
+          "targets": [
+            "parallel-lives"
+          ],
+          "choices": {
+            "spend": {
+              "green": 1,
+              "blue": 3
+            }
+          }
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        },
+        {
+          "sequence": 5,
+          "actor": 1,
+          "action": "cast",
+          "source": "mythos-b",
+          "targets": [
+            "parallel-lives"
+          ],
+          "choices": {
+            "spend": {
+              "green": 1,
+              "blue": 3
+            }
+          }
+        },
+        {
+          "sequence": 6,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 7,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 8,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/battlefield/seat-1/cards/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 11
+        },
+        {
+          "path": "/battlefield/seat-1/tokens/Parallel Lives/count",
+          "operator": "equals",
+          "expected": 10
+        },
+        {
+          "path": "/graveyard/seat-1/cards/Mythos of Illuna/count",
+          "operator": "equals",
+          "expected": 2
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "replacement.applied",
+          "token.created",
+          "zone.changed"
+        ],
+        "payload_fields": {
+          "replacement.applied": [
+            "affected_event",
+            "multiplier",
+            "source_card"
+          ],
+          "token.created": [
+            "card_name",
+            "controller",
+            "quantity"
+          ],
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ]
+        }
+      }
+    },
+    {
+      "id": "layers.clone-copies-base-before-anthem",
+      "version": 1,
+      "title": "Clone copies printed characteristics before anthem modification",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 45,
+      "cards": [
+        "Clone",
+        "Glorious Anthem",
+        "Grizzly Bears",
+        "Island",
+        "Plains"
+      ],
+      "initial_state": {
+        "turn": 5,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "blue": 4
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "anthem",
+            "card": "Glorious Anthem",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "bears",
+            "card": "Grizzly Bears",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "clone",
+            "card": "Clone",
+            "owner": 1,
+            "zone": "hand"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "clone",
+          "choices": {
+            "copy": "bears"
+          }
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/objects/clone/card_name",
+          "operator": "equals",
+          "expected": "Grizzly Bears"
+        },
+        {
+          "path": "/objects/clone/base_power",
+          "operator": "equals",
+          "expected": 2
+        },
+        {
+          "path": "/objects/clone/base_toughness",
+          "operator": "equals",
+          "expected": 2
+        },
+        {
+          "path": "/objects/clone/effective_power",
+          "operator": "equals",
+          "expected": 3
+        },
+        {
+          "path": "/objects/clone/effective_toughness",
+          "operator": "equals",
+          "expected": 3
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "copy.applied",
+          "characteristics.evaluated",
+          "zone.changed"
+        ],
+        "payload_fields": {
+          "copy.applied": [
+            "copied_card",
+            "new_object"
+          ],
+          "characteristics.evaluated": [
+            "base_power",
+            "base_toughness",
+            "effective_power",
+            "effective_toughness"
+          ],
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ]
+        }
+      }
+    },
+    {
+      "id": "targeting.lethal-damage-state-based-action",
+      "version": 1,
+      "title": "Targeted lethal damage destroys a creature as a state-based action",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 46,
+      "cards": [
+        "Strangle",
+        "Grizzly Bears",
+        "Mountain",
+        "Forest"
+      ],
+      "initial_state": {
+        "turn": 3,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "red": 1
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "strangle",
+            "card": "Strangle",
+            "owner": 1,
+            "zone": "hand"
+          },
+          {
+            "alias": "bears",
+            "card": "Grizzly Bears",
+            "owner": 2,
+            "controller": 2,
+            "zone": "battlefield"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "strangle",
+          "targets": [
+            "bears"
+          ]
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/battlefield/seat-2/cards/Grizzly Bears/count",
+          "operator": "equals",
+          "expected": 0
+        },
+        {
+          "path": "/graveyard/seat-2/cards/Grizzly Bears/count",
+          "operator": "equals",
+          "expected": 1
+        },
+        {
+          "path": "/graveyard/seat-1/cards/Strangle/count",
+          "operator": "equals",
+          "expected": 1
+        },
+        {
+          "path": "/players/seat-2/life",
+          "operator": "equals",
+          "expected": 20
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "damage.dealt",
+          "state_based_action",
+          "zone.changed"
+        ],
+        "payload_fields": {
+          "damage.dealt": [
+            "amount",
+            "target"
+          ],
+          "state_based_action": [
+            "action",
+            "card_name",
+            "reason"
+          ],
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ]
+        }
+      }
+    },
+    {
+      "id": "triggers.creature-etb-gains-life",
+      "version": 1,
+      "title": "A creature entering triggers its controller's life gain",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 47,
+      "cards": [
+        "Ajani's Welcome",
+        "Grizzly Bears",
+        "Plains",
+        "Forest"
+      ],
+      "initial_state": {
+        "turn": 3,
+        "phase": "precombat_main",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {
+            "seat": 1,
+            "life": 20,
+            "mana_pool": {
+              "green": 2
+            }
+          },
+          {
+            "seat": 2,
+            "life": 20
+          }
+        ],
+        "objects": [
+          {
+            "alias": "welcome",
+            "card": "Ajani's Welcome",
+            "owner": 1,
+            "controller": 1,
+            "zone": "battlefield"
+          },
+          {
+            "alias": "bears",
+            "card": "Grizzly Bears",
+            "owner": 1,
+            "zone": "hand"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "sequence": 1,
+          "actor": 1,
+          "action": "cast",
+          "source": "bears"
+        },
+        {
+          "sequence": 2,
+          "actor": 1,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 3,
+          "actor": 2,
+          "action": "pass_priority"
+        },
+        {
+          "sequence": 4,
+          "actor": 1,
+          "action": "resolve_top"
+        }
+      ],
+      "assertions": [
+        {
+          "path": "/players/seat-1/life",
+          "operator": "equals",
+          "expected": 21
+        },
+        {
+          "path": "/battlefield/seat-1/cards/Ajani's Welcome/count",
+          "operator": "equals",
+          "expected": 1
+        },
+        {
+          "path": "/battlefield/seat-1/cards/Grizzly Bears/count",
+          "operator": "equals",
+          "expected": 1
+        }
+      ],
+      "event_projection": {
+        "kinds": [
+          "spell.cast",
+          "zone.changed",
+          "trigger.fired",
+          "life.changed"
+        ],
+        "payload_fields": {
+          "zone.changed": [
+            "card_name",
+            "from",
+            "to"
+          ],
+          "trigger.fired": [
+            "event",
+            "entering"
+          ],
+          "life.changed": [
+            "delta",
+            "life"
+          ]
+        }
+      }
+    },
+    {
+      "id": "combat.unblocked-creature-damages-player",
+      "version": 1,
+      "title": "An unblocked creature deals combat damage to the defending player",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 48,
+      "cards": ["Grizzly Bears", "Forest", "Island"],
+      "initial_state": {
+        "turn": 4,
+        "phase": "declare_attackers",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [{"seat": 1, "life": 20}, {"seat": 2, "life": 20}],
+        "objects": [{"alias": "bears", "card": "Grizzly Bears", "owner": 1, "controller": 1, "zone": "battlefield"}]
+      },
+      "actions": [
+        {"sequence": 1, "actor": 1, "action": "attack", "source": "bears", "targets": []},
+        {"sequence": 2, "actor": 1, "action": "advance_phase"},
+        {"sequence": 3, "actor": 2, "action": "advance_phase"}
+      ],
+      "assertions": [
+        {"path": "/players/seat-2/life", "operator": "equals", "expected": 18},
+        {"path": "/battlefield/seat-1/cards/Grizzly Bears/count", "operator": "equals", "expected": 1},
+        {"path": "/objects/bears/tapped", "operator": "equals", "expected": true}
+      ],
+      "event_projection": {
+        "kinds": ["attacker.declared", "combat.damage", "life.changed"],
+        "payload_fields": {
+          "attacker.declared": ["defender"],
+          "combat.damage": ["amount", "combat", "target"],
+          "life.changed": ["delta", "life"]
+        }
+      }
+    },
+    {
+      "id": "multiplayer.combat-eliminates-one-opponent",
+      "version": 1,
+      "title": "Combat eliminates one opponent while another remains in the game",
+      "mode": "commander",
+      "seats": 3,
+      "seed": 49,
+      "cards": ["Grizzly Bears", "Forest"],
+      "initial_state": {
+        "turn": 4,
+        "phase": "declare_attackers",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {"seat": 1, "life": 20},
+          {"seat": 2, "life": 20},
+          {"seat": 3, "life": 2}
+        ],
+        "objects": [
+          {"alias": "bears", "card": "Grizzly Bears", "owner": 1, "controller": 1, "zone": "battlefield"},
+          {"alias": "seat-3-forest", "card": "Forest", "owner": 3, "controller": 3, "zone": "battlefield"}
+        ]
+      },
+      "actions": [
+        {"sequence": 1, "actor": 1, "action": "attack", "source": "bears", "choices": {"defender": 3}},
+        {"sequence": 2, "actor": 1, "action": "advance_phase"},
+        {"sequence": 3, "actor": 3, "action": "advance_phase"}
+      ],
+      "assertions": [
+        {"path": "/players/seat-2/life", "operator": "equals", "expected": 20},
+        {"path": "/players/seat-2/lost", "operator": "equals", "expected": false},
+        {"path": "/players/seat-3/life", "operator": "equals", "expected": 0},
+        {"path": "/players/seat-3/lost", "operator": "equals", "expected": true},
+        {"path": "/battlefield/seat-3/cards/Forest/count", "operator": "equals", "expected": 0},
+        {"path": "/objects/bears/tapped", "operator": "equals", "expected": true},
+        {"path": "/objects/bears/defender", "operator": "equals", "expected": 3}
+      ],
+      "event_projection": {
+        "kinds": ["attacker.declared", "combat.damage", "life.changed", "player.eliminated"],
+        "payload_fields": {
+          "attacker.declared": ["defender"],
+          "combat.damage": ["amount", "combat", "target"],
+          "life.changed": ["delta", "life"],
+          "player.eliminated": ["permanents_removed", "reason", "seat"]
+        }
+      }
+    },
+    {
+      "id": "arena.oracle-of-the-alpha-conjures-power-nine",
+      "version": 1,
+      "title": "Oracle of the Alpha conjures the Power Nine into its controller's library",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 50,
+      "cards": [
+        "Oracle of the Alpha",
+        "Ancestral Recall",
+        "Black Lotus",
+        "Mox Emerald",
+        "Mox Jet",
+        "Mox Pearl",
+        "Mox Ruby",
+        "Mox Sapphire",
+        "Time Walk",
+        "Timetwister"
+      ],
+      "initial_state": {
+        "turn": 3,
+        "phase": "main_1",
+        "active_player": 1,
+        "priority_player": 1,
+        "players": [
+          {"seat": 1, "life": 20, "mana_pool": {"blue": 3}},
+          {"seat": 2, "life": 20}
+        ],
+        "objects": [
+          {"alias": "oracle", "card": "Oracle of the Alpha", "owner": 1, "controller": 1, "zone": "hand"}
+        ]
+      },
+      "actions": [
+        {"sequence": 1, "actor": 1, "action": "cast", "source": "oracle"},
+        {"sequence": 2, "actor": 1, "action": "pass_priority"},
+        {"sequence": 3, "actor": 2, "action": "pass_priority"},
+        {"sequence": 4, "actor": 1, "action": "resolve_top"}
+      ],
+      "assertions": [
+        {"path": "/battlefield/seat-1/cards/Oracle of the Alpha/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/total_count", "operator": "equals", "expected": 9},
+        {"path": "/library/seat-1/cards/Ancestral Recall/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Black Lotus/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Mox Emerald/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Mox Jet/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Mox Pearl/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Mox Ruby/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Mox Sapphire/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Time Walk/count", "operator": "equals", "expected": 1},
+        {"path": "/library/seat-1/cards/Timetwister/count", "operator": "equals", "expected": 1}
+      ],
+      "event_projection": {
+        "kinds": ["spell.cast", "zone.changed", "trigger.fired", "card.conjured", "effect.unsupported"],
+        "payload_fields": {
+          "zone.changed": ["card_name", "from", "to"],
+          "trigger.fired": ["effect", "event"],
+          "card.conjured": ["card_names", "quantity", "zone"],
+          "effect.unsupported": ["mechanic", "requested", "zone"]
+        }
+      }
+    },
+    {
+      "id": "arena.rebalanced-falcon-abomination-has-flash",
+      "version": 1,
+      "title": "Rebalanced Falcon Abomination has Flash while the original does not",
+      "mode": "constructed",
+      "seats": 2,
+      "seed": 51,
+      "cards": ["Falcon Abomination", "A-Falcon Abomination"],
+      "initial_state": {
+        "turn": 3,
+        "phase": "main_1",
+        "active_player": 2,
+        "priority_player": 1,
+        "players": [
+          {"seat": 1, "life": 20, "mana_pool": {"blue": 3}},
+          {"seat": 2, "life": 20}
+        ],
+        "objects": [
+          {"alias": "original", "card": "Falcon Abomination", "owner": 1, "controller": 1, "zone": "hand"},
+          {"alias": "rebalanced", "card": "A-Falcon Abomination", "owner": 1, "controller": 1, "zone": "hand"}
+        ]
+      },
+      "actions": [
+        {"sequence": 1, "actor": 1, "action": "check_cast_timing", "source": "original"},
+        {"sequence": 2, "actor": 1, "action": "check_cast_timing", "source": "rebalanced"},
+        {"sequence": 3, "actor": 1, "action": "cast", "source": "rebalanced"},
+        {"sequence": 4, "actor": 1, "action": "pass_priority"},
+        {"sequence": 5, "actor": 2, "action": "pass_priority"}
+      ],
+      "assertions": [
+        {"path": "/timing/original_legal", "operator": "equals", "expected": false},
+        {"path": "/timing/rebalanced_legal", "operator": "equals", "expected": true},
+        {"path": "/battlefield/seat-1/cards/A-Falcon Abomination/count", "operator": "equals", "expected": 1}
+      ],
+      "event_projection": {
+        "kinds": ["timing.checked", "spell.cast", "zone.changed"],
+        "payload_fields": {
+          "timing.checked": ["active_player", "card_name", "caster", "legal"],
+          "zone.changed": ["card_name", "from", "to"]
+        }
+      }
+    }
+  ]
+}
