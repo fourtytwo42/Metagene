@@ -4441,7 +4441,7 @@ dependencies = [
 
 [[package]]
 name = "metagene-app"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "burn",
  "bzip2 0.6.1",
@@ -4464,7 +4464,7 @@ dependencies = [
 
 [[package]]
 name = "metagene-core"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "rayon",
  "serde",

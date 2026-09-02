@@ -9,6 +9,7 @@ test.beforeEach(async ({ page }) => {
     let forgeReady = false;
     let continuedStatus: unknown;
     let competitiveSeed = false;
+    let importedSeed = false;
     const simulatorStatuses = () => [
       { id: "structural", name: "Metagene structural screen", installed: true, data_ready: true, executable: "built in", supported_formats: ["all"], note: "Fast structural screen" },
       { id: "hexdek", name: "HexDek Yggdrasil", installed: hexdekReady, data_ready: hexdekReady, executable: "hexdek-tournament.exe", supported_formats: ["constructed", "commander"], note: "Bundled matchup engine" },
@@ -45,6 +46,7 @@ test.beforeEach(async ({ page }) => {
         if (command === "import_workspace") {
           const input = args as { text: string; platform: string; format: string };
           if (input.text.includes("Missing Card")) throw new Error("line 2: card not found in the selected platform and format: Missing Card");
+          importedSeed = true;
           competitiveSeed = input.text.includes("Competitive Seed");
           const imported = workspace(input);
           if (input.text.includes("Strategy Seed")) {
@@ -53,6 +55,14 @@ test.beforeEach(async ({ page }) => {
             return { ...imported, pool: { cards: [copyCard, payoffCard] }, seed_deck: { name: "Imported Strategy Seed", command_zone: [], mainboard: [{ card_id: "copy-engine", quantity: 30 }, { card_id: "etb-payoff", quantity: 30 }], sideboard: [] } };
           }
           return { ...imported, seed_deck: { name: input.text.includes("Start Failure") ? "Rejected Seed" : competitiveSeed ? "Competitive Seed" : "Imported Historic Deck", command_zone: [], mainboard: [{ card_id: "imported-seed", quantity: 60 }], sideboard: [] } };
+        }
+        if (command === "ground_evolution_from_field") {
+          const input = args as { request: { evolution: ReturnType<typeof workspace>; opponents: { name: string; command_zone: never[]; mainboard: { card_id: string; quantity: number }[]; sideboard: never[] }[] } };
+          return {
+            ...input.request.evolution,
+            seed_deck: { ...input.request.opponents[0], name: `Competitive field seed · ${input.request.opponents[0].name}` },
+            pool_filter: ["Tournament seed"]
+          };
         }
         if (command === "simulator_status") return simulatorStatuses();
         if (command === "install_hexdek_engine") { hexdekReady = true; return simulatorStatuses()[1]; }
@@ -63,8 +73,8 @@ test.beforeEach(async ({ page }) => {
           return "run-color";
         }
         if (command === "acquire_competitive_field") {
-          if (!competitiveSeed) throw new Error("fixture tournament field disabled");
-          const opponent = { name: "Izzet Wizards", command_zone: [], mainboard: [], sideboard: [] };
+          if (importedSeed && !competitiveSeed) throw new Error("fixture tournament field disabled");
+          const opponent = { name: "Izzet Wizards", command_zone: [], mainboard: [{ card_id: "tournament-seed", quantity: 60 }], sideboard: [] };
           return {
             field: {
               schema_version: 1, revision_id: "field-e2e", platform: "arena", format: "historic", commander: false,
@@ -82,7 +92,11 @@ test.beforeEach(async ({ page }) => {
           routes: [{ opponent_index: 0, opponent_name: "Izzet Wizards", weight: 1, engine: "hexdek", eligible: true, reasons: [] }], field_weighted_coverage: 1, candidate_critical_coverage: 1, locked: true,
           claim: { tier: "single_engine_validated", promotable: true, label: "Single-engine validated", reasons: [] }
         };
-        if (command === "start_hybrid_evolution") return "hybrid-e2e";
+        if (command === "start_hybrid_evolution") {
+          const input = args as { request: { evolution: { seed_deck: { mainboard: unknown[] } } } };
+          if (input.request.evolution.seed_deck.mainboard.length === 0) throw new Error("fixture rules coverage blocked");
+          return "hybrid-e2e";
+        }
         if (command === "prove_deck_combos") {
           const resources = { mana: 0, cards: 0, permanents: 0, tokens: 0, life: 0, graveyard: 0, counters: 0, damage: 0, mill: 0 };
           return { schema_version: 1, deck_name: "Evolved Candidate 1", corpus_revision: "spellbook-e2e", corpus_hypotheses: 42, packages: [], explored_states: 24, elapsed_ms: 3, truncated: false, warnings: [], lines: [{ id: "line-e2e", corpus_id: "42", cards: ["Copy Engine", "ETB Payoff"], actions: [{ id: "action-e2e", card_id: "copy-engine", card_name: "Copy Engine", mode_name: "Copy Engine", label: "Create a token copy", kind: "copy", timing: "sorcery", zone: "Battlefield", cost: resources, effect: { ...resources, tokens: 1 }, uses_tap: false, consumes_self: false, once_per_turn: false, parser_confidence: 1, conditions: [] }], proof: "cross_engine_verified", finite_win: false, repeatable: true, loop_output: { ...resources, tokens: 1 }, minimum_resources: { ...resources, permanents: 2 }, expected_turn: 4, setup: ["Both permanents on battlefield"], disruption_points: ["Remove Copy Engine"], dead_pieces: [], unsupported_assumptions: [], explored_states: 24, elapsed_ms: 3 }] };
@@ -227,6 +241,8 @@ test("supports exact mono, multicolor, and explicit colorless deck palettes", as
   await page.getByRole("button", { name: "Build competitive deck", exact: true }).click();
   const run = await page.evaluate(() => (window as unknown as { __METAGENE_TEST_CALLS__: { command: string; args: unknown }[] }).__METAGENE_TEST_CALLS__.find((call) => call.command === "start_evolution"));
   expect(run?.args).toMatchObject({ request: { constraints: { allowed_colors: ["Red", "Colorless"] } } });
+  expect(run?.args).toMatchObject({ request: { seed_deck: { name: "Competitive field seed · Izzet Wizards", mainboard: [{ card_id: "tournament-seed", quantity: 60 }] } } });
+  await expect(page.getByText(/Evolution running · Provisional—field-grounded structural screening/)).toBeVisible();
 });
 
 test("blocks failed imports, preserves generations, and lets the imported deck establish its palette", async ({ page }) => {

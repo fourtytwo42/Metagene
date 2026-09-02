@@ -1,6 +1,6 @@
 # Metagene
 
-User and release documentation: [User Guide](docs/USER_GUIDE.md) · [0.2 Migration](docs/MIGRATION_0.2.md) · [0.2.0](docs/RELEASE_0.2.0.md) · [0.2.1](docs/RELEASE_0.2.1.md) · [0.2.2](docs/RELEASE_0.2.2.md) · [0.2.3](docs/RELEASE_0.2.3.md) · [0.3.0](docs/RELEASE_0.3.0.md) · [0.3.1](docs/RELEASE_0.3.1.md) · [0.3.2](docs/RELEASE_0.3.2.md) · [Release Process](docs/RELEASING.md) · [Third-Party Notices](THIRD_PARTY_NOTICES.md)
+User and release documentation: [User Guide](docs/USER_GUIDE.md) · [0.2 Migration](docs/MIGRATION_0.2.md) · [0.2.0](docs/RELEASE_0.2.0.md) · [0.2.1](docs/RELEASE_0.2.1.md) · [0.2.2](docs/RELEASE_0.2.2.md) · [0.2.3](docs/RELEASE_0.2.3.md) · [0.3.0](docs/RELEASE_0.3.0.md) · [0.3.1](docs/RELEASE_0.3.1.md) · [0.3.2](docs/RELEASE_0.3.2.md) · [0.3.3](docs/RELEASE_0.3.3.md) · [Release Process](docs/RELEASING.md) · [Third-Party Notices](THIRD_PARTY_NOTICES.md)
 
 Metagene is a local-first, platform-agnostic Magic deck-evolution workbench. A Rust engine generates and evaluates legal deck candidates in parallel; a Tauri desktop UI selects Arena, paper, or Magic Online formats, configures runs, shows live progress, inspects candidates with card art, and exports deck text.
 

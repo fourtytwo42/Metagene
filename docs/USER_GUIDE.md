@@ -30,6 +30,10 @@ Constructed blank starts and mutations use a count-aware prior: repeated copies 
 
 For intentional offline experimentation, choose a focused pool under Advanced. Exact colors constrain both tournament seed compatibility and mutations: if the current field has no legal archetype in the selected colors, import a seed or provide a focused pool rather than weakening the competitive grounding rule.
 
+## 0.3.3 competitive blank-build fallback
+
+**Build competitive deck** first tries tournament-field closed-loop evolution. If the acquired field is usable but current rules-engine coverage cannot validate it, Metagene now starts a field-grounded structural run and labels its output **Provisional**. It does not silently fall back to random all-catalog evolution.
+
 ## 0.3.2 closed-loop quality migration
 
 Catalog model v11 and structural revision `closed-loop-quality-v11` rebuild automatically while preserving application data. Nonland faces without printed mana costs are no longer treated as free `{0}` spells. Reminder-text Treasure abilities, triggered mana rewards, trigger conditions, duplicate clause summaries, and unmet conditional activations no longer masquerade as functional effects or unconditional sources. Shared basic-search targets, narrow mainboard copies, excess copies, and turn-by-turn closing pressure now affect screening.

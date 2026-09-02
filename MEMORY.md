@@ -4,12 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: Metagene 0.3.2 closed-loop deck-quality correction is complete and ready for handoff.
-- Last meaningful checkpoint: 0.3.2 passed every release gate, was packaged and installed with saved-run preservation, and the previously absent Git metadata was initialized for a clean source snapshot.
-- Next step: Optional future work should start from tournament/Arena feedback against the 0.3.2 incumbent rather than changing the structural objective without evidence.
-- Blockers: None.
+- Current task: Fix the blank **Build competitive deck** launch failure reported against installed Metagene 0.3.2.
+- Last meaningful checkpoint: Metagene 0.3.3 passed the full release gates and was packaged with the competitive blank-build fallback. The installer is ready but not installed because the user is still running 0.3.2.
+- Next step: commit/push the 0.3.3 source and installer metadata, then install only after the user closes the currently running app.
+- Blockers: The user is currently running Metagene 0.3.2; do not terminate it merely to install the fix.
 
 ## Current State
+
+- 2026-09-01 Metagene 0.3.3 release checkpoint: installer `artifacts/Metagene_0.3.3_x64-setup.exe` is 59,462,688 bytes with SHA-256 `F2B3037985CFC48FEFE3DC7023FAA25F241445C21957731511E5E97533121A45`. Gates passed: formatting, 169 app tests with one intentional runtime smoke ignored, 57 core tests, the ignored compiler-free HexDek extraction smoke separately, strict all-target/all-feature Clippy, frontend production build, and Playwright 11/11 including the field-grounded blank-build fallback. Installation is intentionally pending because the user is running 0.3.2. Last verified 2026-09-01.
+- 2026-09-01 blank-build launch diagnosis: `src/App.tsx::start` acquired a tournament field and attempted hybrid evolution, but on hybrid failure retried `start_evolution` with the original empty workspace. `src-tauri/src/lib.rs` correctly rejected that ungrounded all-catalog request, producing the misleading engine-install error even though first-run setup already provisions bundled HexDek. The fix adds `ground_evolution_from_field`, shares field grounding with hybrid preparation, starts a tournament-seeded provisional structural run when engine coverage is unavailable, and preserves the guard for truly ungrounded blank builds. Last verified 2026-09-01.
 
 - 2026-09-01 GitHub backup checkpoint: the previously local-only repository is now private at `https://github.com/fourtytwo42/Metagene`. Local `master` tracks `origin/master`; the 0.3.2 source snapshot is pushed, and private release `v0.3.2` stores the compiled Windows installer with GitHub-verified SHA-256 `482F16C4AF02E85CF61C73D8FC9F6B3EF4627533FAE708CA4CB2A5509C34D56D`. Last verified 2026-09-01.
 - 2026-09-01 Metagene 0.3.2 release checkpoint: 0.3.2 is compiled, packaged, and installed. Installer `artifacts/Metagene_0.3.2_x64-setup.exe` is 59,465,318 bytes with SHA-256 `482F16C4AF02E85CF61C73D8FC9F6B3EF4627533FAE708CA4CB2A5509C34D56D`. Installed executable and registry report 0.3.2, the installed app reached input idle, and the exact pre-upgrade `runs.sqlite` hash remained `4C474563764E4E4D1560847A2419DAABC0BD9A88BBBA2FA64DEE35FE76925588`. Final gates: format, 57 core tests, 168 app tests with one intentional large-runtime test ignored, that compiler-free extraction test separately passed, strict all-target/all-feature Clippy, frontend build, Playwright 11/11, and 39,351 structural candidates/second. Last verified 2026-09-01.

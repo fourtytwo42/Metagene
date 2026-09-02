@@ -1020,6 +1020,7 @@ export default function App() {
 
   const start = async () => {
     if (!workspace) return;
+    let evolutionRequest = workspace;
     const competitiveBlankStart = workspace.config.evolution_mode === "rebuild"
       && workspace.seed_deck.mainboard.length === 0
       && workspace.seed_deck.command_zone.length === 0
@@ -1132,14 +1133,25 @@ export default function App() {
             activeFieldRevisionId
           );
           if (launched) return;
-          provisionalReason = "simulator coverage could not prove the finalists";
+          provisionalReason = "field-grounded structural screening; simulator coverage could not prove the finalists";
         } else if (!provisionalReason && !hexdekReady && !forgeReady) {
-          provisionalReason = "no rules engine is available";
+          provisionalReason = "field-grounded structural screening; no rules engine is available";
         } else if (!provisionalReason) {
           provisionalReason = "the acquired field was incomplete";
         }
+        if (competitiveBlankStart && fieldDecks.length >= requiredFieldDecks) {
+          evolutionRequest = await invoke<RunRequest>("ground_evolution_from_field", {
+            request: {
+              evolution: workspace,
+              opponents: fieldDecks,
+              opponent_weights: fieldWeights,
+              commander: requiresCommander
+            }
+          });
+          setWorkspace(evolutionRequest);
+        }
       }
-      const id = await invoke<string>("start_evolution", { request: workspace });
+      const id = await invoke<string>("start_evolution", { request: evolutionRequest });
       setProvisionalResultReason(provisionalReason || "game validation not completed");
       setJobId(id);
       setActiveRunId(id);

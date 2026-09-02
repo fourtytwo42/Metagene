@@ -527,6 +527,15 @@ struct HybridEvolutionRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+struct GroundEvolutionRequest {
+    evolution: RunRequest,
+    opponents: Vec<Deck>,
+    #[serde(default)]
+    opponent_weights: Vec<f64>,
+    commander: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 struct GauntletProvenance {
     id: String,
     name: String,
@@ -2009,6 +2018,32 @@ fn add_tournament_cooccurrence_packages(
 }
 
 #[tauri::command]
+fn ground_evolution_from_field(
+    request: GroundEvolutionRequest,
+    state: State<'_, AppState>,
+) -> Result<RunRequest, String> {
+    let mut evolution = prepare_evolution_request(&state.data_dir, request.evolution)?;
+    validate_gauntlet_decks(
+        &state.data_dir,
+        &evolution.platform,
+        &evolution.format,
+        request.commander,
+        &request.opponents,
+    )?;
+    let weights = if request.commander {
+        vec![1.0; request.opponents.len()]
+    } else {
+        normalize_opponent_weights(&request.opponent_weights, request.opponents.len())?
+    };
+    add_tournament_cooccurrence_packages(
+        &mut evolution.config,
+        &evolution.pool,
+        &request.opponents,
+    );
+    ground_prepared_evolution(evolution, &request.opponents, &weights, request.commander)
+}
+
+#[tauri::command]
 fn start_evolution(
     request: RunRequest,
     app: tauri::AppHandle,
@@ -2017,7 +2052,7 @@ fn start_evolution(
     let request = prepare_evolution_request(&state.data_dir, request)?;
     if blank_rebuild_requires_grounding(&request) {
         return Err(
-            "A competitive blank build needs tournament-field closed-loop evolution with a ready rules engine, or a focused card pool. Automatic field validation did not produce a runnable seed, so Metagene stopped instead of evolving an ungrounded all-catalog pile. Install a bundled engine and retry, or choose a focused pool under Advanced."
+            "A competitive blank build needs a compatible tournament-field seed or a focused card pool. Automatic field acquisition did not produce a runnable seed, so Metagene stopped instead of evolving an ungrounded all-catalog pile. Retry field acquisition, change the selected colors, or choose a focused pool under Advanced."
                 .into(),
         );
     }
@@ -3077,37 +3112,17 @@ fn start_hybrid_evolution(
     } else {
         normalize_opponent_weights(&request.opponent_weights, request.opponents.len())?
     };
-    request.evolution.opponent_field =
-        opponent_field_profile(&request.opponents, &request.evolution.pool);
     if request.evolution.config.evolution_mode == EvolutionMode::Tune {
         // Structural evidence screens entrants, but it never promotes a deck.
         // Tune promotion is determined exclusively by paired game evidence.
         request.structural_weight = 0.0;
     }
-    seed_blank_constructed_from_field(
-        &mut request.evolution,
+    request.evolution = ground_prepared_evolution(
+        request.evolution,
         &request.opponents,
         &request.opponent_weights,
         request.commander,
-    );
-    if request.evolution.seed_deck.mainboard_count() == 0
-        && request.evolution.seed_deck.command_zone.is_empty()
-        && request.evolution.config.evolution_mode == EvolutionMode::Rebuild
-        && request.evolution.pool_filter.is_empty()
-    {
-        return Err(
-            "The tournament field has no legal archetype matching the selected platform, format, and deck colors. Metagene stopped instead of starting an ungrounded full-catalog search. Change the color selection, import a seed deck, or choose a focused pool under Advanced."
-                .into(),
-        );
-    }
-    if focus_constructed_evolution_pool_on_field(
-        &mut request.evolution,
-        &request.opponents,
-        request.commander,
-    ) == 0
-    {
-        return Err("The competitive field contains no cards in the prepared legal pool.".into());
-    }
+    )?;
     let resource_budgets =
         resource_governor::load(&state.data_dir).map_err(|error| error.to_string())?;
     resource_governor::enforce(&state.data_dir, &resource_budgets)
@@ -4490,6 +4505,30 @@ fn seed_blank_constructed_from_field(
     Some(source_name)
 }
 
+fn ground_prepared_evolution(
+    mut evolution: RunRequest,
+    opponents: &[Deck],
+    weights: &[f64],
+    commander: bool,
+) -> Result<RunRequest, String> {
+    evolution.opponent_field = opponent_field_profile(opponents, &evolution.pool);
+    seed_blank_constructed_from_field(&mut evolution, opponents, weights, commander);
+    if evolution.seed_deck.mainboard_count() == 0
+        && evolution.seed_deck.command_zone.is_empty()
+        && evolution.config.evolution_mode == EvolutionMode::Rebuild
+        && evolution.pool_filter.is_empty()
+    {
+        return Err(
+            "The tournament field has no legal archetype matching the selected platform, format, and deck colors. Metagene stopped instead of starting an ungrounded full-catalog search. Change the color selection, import a seed deck, or choose a focused pool under Advanced."
+                .into(),
+        );
+    }
+    if focus_constructed_evolution_pool_on_field(&mut evolution, opponents, commander) == 0 {
+        return Err("The competitive field contains no cards in the prepared legal pool.".into());
+    }
+    Ok(evolution)
+}
+
 fn ensure_constructed_seed_baseline(
     result: &mut RunResult,
     evolution: &RunRequest,
@@ -4915,6 +4954,54 @@ mod request_tests {
         assert_eq!(baseline_rank, Some(0));
         assert!(result.frontier.is_empty());
         assert_eq!(result.baseline.unwrap().deck.mainboard[0].card_id.0, "high");
+    }
+
+    #[test]
+    fn field_grounded_structural_fallback_can_start_without_a_rules_engine() {
+        let pool = CardPool {
+            cards: vec![test_card("seed"), test_card("unrelated")],
+        };
+        let evolution = RunRequest {
+            platform: "arena".into(),
+            format: "historic".into(),
+            simulator_coverage: "all".into(),
+            pool_filter: vec![],
+            exclude_disputed_cards: true,
+            exclude_unsupported_cards: true,
+            pool,
+            seed_deck: Deck {
+                name: "Blank".into(),
+                command_zone: vec![],
+                mainboard: vec![],
+                sideboard: vec![],
+            },
+            constraints: DeckConstraints::default(),
+            config: EvolutionConfig::default(),
+            opponent_field: OpponentFieldProfile::default(),
+        };
+        let opponents = vec![Deck {
+            name: "Tournament archetype".into(),
+            command_zone: vec![],
+            mainboard: vec![metagene_core::DeckEntry {
+                card_id: metagene_core::CardId("seed".into()),
+                quantity: 60,
+            }],
+            sideboard: vec![],
+        }];
+
+        let grounded = ground_prepared_evolution(evolution, &opponents, &[1.0], false).unwrap();
+
+        assert!(!blank_rebuild_requires_grounding(&grounded));
+        assert_eq!(grounded.seed_deck.mainboard_count(), 60);
+        assert!(
+            grounded
+                .seed_deck
+                .name
+                .contains("Competitive field seed · Tournament archetype")
+        );
+        assert!(grounded.opponent_field.available);
+        assert_eq!(grounded.pool.cards.len(), 1);
+        assert_eq!(grounded.pool.cards[0].id.0, "seed");
     }
 
     #[test]
@@ -7279,6 +7366,7 @@ pub fn run() {
             compare_gauntlets,
             export_metagame_bundle,
             import_metagame_bundle,
+            ground_evolution_from_field,
             start_evolution,
             continue_evolution,
             resume_evolution,
